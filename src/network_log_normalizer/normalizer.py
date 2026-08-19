@@ -5,6 +5,7 @@ from typing import Any
 
 from .envelope import extract_event_envelope
 from .parsers import DEFAULT_PARSERS, EventParser, dispatch_event
+from .platform import extract_platform_hint
 from .schema import NormalizedEvent
 
 
@@ -97,9 +98,20 @@ def normalize_record(
     if not envelope.event_code and raw_message != message:
         envelope = extract_event_envelope(raw_message)
 
+    platform = extract_platform_hint(
+        source.get("vendor_hint"),
+        source.get("os_family_hint"),
+    )
+
     attributes: dict[str, Any] = {
         "normalization_path": "generic",
     }
+
+    if platform.raw_vendor:
+        attributes["vendor_hint"] = platform.raw_vendor
+
+    if platform.raw_os_family:
+        attributes["os_family_hint"] = platform.raw_os_family
 
     if envelope.code_severity is not None:
         attributes["event_code_severity"] = (
@@ -121,6 +133,8 @@ def normalize_record(
         message=message,
         raw_message=raw_message,
         parse_status=_text(source.get("parse_status")),
+        vendor=platform.vendor,
+        os_family=platform.os_family,
         event_code=envelope.event_code,
         event_family=envelope.event_family,
         attributes=attributes,

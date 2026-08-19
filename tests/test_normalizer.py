@@ -178,3 +178,36 @@ def test_normalizer_survives_injected_broken_parser():
     assert event.attributes["parser_errors"][0]["parser"] == (
         "broken-test-parser"
     )
+
+
+def test_explicit_platform_hint_is_preserved():
+    event = normalize_record(
+        {
+            "vendor_hint": "Arista Networks",
+            "os_family_hint": "Arista EOS",
+            "message": "%BGP-5-ADJCHANGE: unknown variant",
+        }
+    )
+
+    assert event.vendor == "arista"
+    assert event.os_family == "eos"
+    assert event.attributes["vendor_hint"] == "Arista Networks"
+    assert event.attributes["os_family_hint"] == "Arista EOS"
+    assert event.attention_eligible is True
+
+
+def test_untrusted_platform_hint_remains_unknown():
+    event = normalize_record(
+        {
+            "vendor_hint": "FutureVendor",
+            "os_family_hint": "FutureOS",
+            "message": "%FUTURETHING-3-EVENT: important event",
+        }
+    )
+
+    assert event.vendor == "unknown"
+    assert event.os_family == "unknown"
+    assert event.attributes["vendor_hint"] == "FutureVendor"
+    assert event.attributes["os_family_hint"] == "FutureOS"
+    assert event.event_code == "FUTURETHING-3-EVENT"
+    assert event.attention_eligible is True
