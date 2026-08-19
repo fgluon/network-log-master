@@ -40,6 +40,12 @@ class EosBgpAdjchangeParser:
     name = "eos-bgp-adjchange"
 
     def matches(self, event: NormalizedEvent) -> bool:
+        if event.vendor != "arista":
+            return False
+
+        if event.os_family != "eos":
+            return False
+
         if event.event_code != "BGP-5-ADJCHANGE":
             return False
 
