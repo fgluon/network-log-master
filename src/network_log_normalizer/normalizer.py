@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .envelope import extract_event_envelope
 from .schema import NormalizedEvent
 
 
@@ -87,6 +88,20 @@ def normalize_record(record: Any) -> NormalizedEvent:
     if not message:
         message = raw_message
 
+    envelope = extract_event_envelope(message)
+
+    if not envelope.event_code and raw_message != message:
+        envelope = extract_event_envelope(raw_message)
+
+    attributes: dict[str, Any] = {
+        "normalization_path": "generic",
+    }
+
+    if envelope.code_severity is not None:
+        attributes["event_code_severity"] = (
+            envelope.code_severity
+        )
+
     return NormalizedEvent(
         timestamp=_text(source.get("timestamp")),
         ingest_timestamp=_text(source.get("ingest_timestamp")),
@@ -102,7 +117,7 @@ def normalize_record(record: Any) -> NormalizedEvent:
         message=message,
         raw_message=raw_message,
         parse_status=_text(source.get("parse_status")),
-        attributes={
-            "normalization_path": "generic",
-        },
+        event_code=envelope.event_code,
+        event_family=envelope.event_family,
+        attributes=attributes,
     )

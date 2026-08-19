@@ -9,9 +9,9 @@ def test_unknown_event_is_emitted_capture_first():
             "source_ip": "192.0.2.10",
             "source_port": 514,
             "severity": "warning",
-            "message": "%TOTALLY-NEW-3-EVENT: something happened",
+            "message": "%MYSTERYTHING-3-EVENT: something happened",
             "raw_message": (
-                "<132>%TOTALLY-NEW-3-EVENT: something happened"
+                "<132>%MYSTERYTHING-3-EVENT: something happened"
             ),
             "parse_status": "parsed",
         }
@@ -21,7 +21,9 @@ def test_unknown_event_is_emitted_capture_first():
     assert event.source_ip == "192.0.2.10"
     assert event.source_port == 514
     assert event.vendor == "unknown"
-    assert event.event_family == "unknown"
+    assert event.event_code == "MYSTERYTHING-3-EVENT"
+    assert event.event_family == "mysterything"
+    assert event.attributes["event_code_severity"] == 3
     assert event.entity_type == "unknown"
     assert event.signal_type == "observation"
     assert event.attention_eligible is True
@@ -29,7 +31,7 @@ def test_unknown_event_is_emitted_capture_first():
     assert event.attributes["normalization_path"] == "generic"
     assert (
         event.raw_message
-        == "<132>%TOTALLY-NEW-3-EVENT: something happened"
+        == "<132>%MYSTERYTHING-3-EVENT: something happened"
     )
 
 
@@ -86,4 +88,40 @@ def test_empty_record_is_still_a_valid_observation():
     assert event.raw_message == ""
     assert event.vendor == "unknown"
     assert event.event_family == "unknown"
+    assert event.attention_eligible is True
+
+
+def test_generic_normalizer_extracts_event_envelope():
+    event = normalize_record(
+        {
+            "message": (
+                "%ROUTING-BGP-5-ADJCHANGE: "
+                "neighbor changed state"
+            ),
+        }
+    )
+
+    assert event.event_code == "ROUTING-BGP-5-ADJCHANGE"
+    assert event.event_family == "bgp"
+    assert event.attributes["event_code_severity"] == 5
+    assert event.vendor == "unknown"
+    assert event.attention_eligible is True
+
+
+def test_unknown_future_family_remains_attention_eligible():
+    event = normalize_record(
+        {
+            "message": (
+                "%FUTURETHING-2-SOMETHING_NEW: "
+                "new event type"
+            ),
+        }
+    )
+
+    assert (
+        event.event_code
+        == "FUTURETHING-2-SOMETHING_NEW"
+    )
+    assert event.event_family == "futurething"
+    assert event.vendor == "unknown"
     assert event.attention_eligible is True
