@@ -4,11 +4,13 @@ from .base import EventParser, ParserResult
 from .dispatcher import dispatch_event
 from .eos_bgp import EosBgpAdjchangeParser
 from .iosxr_bgp import IosXrBgpAdjchangeParser
+from .nxos_ethport import NxosEthportStateParser
 
 
 DEFAULT_PARSERS: tuple[EventParser, ...] = (
     EosBgpAdjchangeParser(),
     IosXrBgpAdjchangeParser(),
+    NxosEthportStateParser(),
 )
 
 
