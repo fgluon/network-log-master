@@ -125,3 +125,56 @@ def test_unknown_future_family_remains_attention_eligible():
     assert event.event_family == "futurething"
     assert event.vendor == "unknown"
     assert event.attention_eligible is True
+
+
+def test_normalizer_can_apply_injected_parser():
+    from network_log_normalizer.parsers import ParserResult
+
+    class TestParser:
+        name = "test-parser"
+
+        def matches(self, event):
+            return event.event_family == "bgp"
+
+        def parse(self, event):
+            return ParserResult(
+                vendor="test-vendor",
+                os_family="test-os",
+                protocol="bgp",
+            )
+
+    event = normalize_record(
+        {
+            "message": "%BGP-5-ADJCHANGE: peer down",
+        },
+        parsers=[TestParser()],
+    )
+
+    assert event.vendor == "test-vendor"
+    assert event.os_family == "test-os"
+    assert event.protocol == "bgp"
+    assert event.attributes["parser"] == "test-parser"
+
+
+def test_normalizer_survives_injected_broken_parser():
+    class BrokenParser:
+        name = "broken-test-parser"
+
+        def matches(self, event):
+            return True
+
+        def parse(self, event):
+            raise RuntimeError("simulated failure")
+
+    event = normalize_record(
+        {
+            "message": "%MYSTERYTHING-3-EVENT: important event",
+        },
+        parsers=[BrokenParser()],
+    )
+
+    assert event.event_code == "MYSTERYTHING-3-EVENT"
+    assert event.attention_eligible is True
+    assert event.attributes["parser_errors"][0]["parser"] == (
+        "broken-test-parser"
+    )

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from .envelope import extract_event_envelope
+from .parsers import DEFAULT_PARSERS, EventParser, dispatch_event
 from .schema import NormalizedEvent
 
 
@@ -50,7 +51,10 @@ def _source_port(value: Any) -> int:
     return 0
 
 
-def normalize_record(record: Any) -> NormalizedEvent:
+def normalize_record(
+    record: Any,
+    parsers: Iterable[EventParser] | None = None,
+) -> NormalizedEvent:
     """
     Convert one source record into the stable NormalizedEvent schema.
 
@@ -102,7 +106,7 @@ def normalize_record(record: Any) -> NormalizedEvent:
             envelope.code_severity
         )
 
-    return NormalizedEvent(
+    event = NormalizedEvent(
         timestamp=_text(source.get("timestamp")),
         ingest_timestamp=_text(source.get("ingest_timestamp")),
         device_timestamp=_nullable_text(
@@ -121,3 +125,8 @@ def normalize_record(record: Any) -> NormalizedEvent:
         event_family=envelope.event_family,
         attributes=attributes,
     )
+
+    if parsers is None:
+        parsers = DEFAULT_PARSERS
+
+    return dispatch_event(event, parsers)
