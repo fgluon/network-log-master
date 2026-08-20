@@ -63,6 +63,3 @@ This repository is the durable project control plane, but production changes mus
 
 Historical documents are reference material only. Current verified state and current code take precedence.
 
-## Public-repository posture
-
-This repository intentionally excludes credentials, keys, tokens, production addresses, firewall allowlists, customer/device-identifying raw logs, and other sensitive operational data. Public examples use documentation-only addresses and synthetic device names.
