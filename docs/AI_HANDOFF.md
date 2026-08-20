@@ -7,10 +7,15 @@ Use this file to resume the project safely in a fresh AI session.
 1. `README.md`
 2. `docs/CURRENT_STATE.md`
 3. `docs/ARCHITECTURE.md`
-4. `docs/DATA_CONTRACTS.md`
-5. `docs/ROADMAP.md`
-6. `docs/PROJECT_JOURNAL.md`
-7. component-specific documentation for the task at hand
+4. `docs/DECISIONS.md`
+5. `docs/DATA_CONTRACTS.md`
+6. `docs/OPERATIONS.md`
+7. `docs/CLICKHOUSE.md`
+8. `docs/GRAFANA.md`
+9. `docs/NORMALIZER_MIGRATION.md`
+10. `docs/ROADMAP.md`
+11. `docs/PROJECT_JOURNAL.md`
+12. component-specific documentation for the task at hand
 
 ## Source precedence
 
@@ -33,6 +38,8 @@ Do not allow historical architecture to override a later verified design decisio
 - use fixtures, negative paths, replay, and idempotency checks before service automation
 - update `CURRENT_STATE.md` and append to `PROJECT_JOURNAL.md` at meaningful checkpoints
 - update architecture/data contracts when a durable design decision changes
+- append durable design choices and rationale to `DECISIONS.md`
+- use `PUBLICATION_CHECKLIST.md` before publishing operational/code changes
 
 ## Security/publication rules
 
