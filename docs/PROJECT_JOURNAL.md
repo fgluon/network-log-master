@@ -49,3 +49,14 @@ Both remain generic observations until the NX-OS parser is added.
 A transitional GX10 classifier already treats retransmission evidence as a degradation and keys known neighbors using a deterministic OSPF device/process/neighbor identity. A limitation was identified in the transitional process extraction: it recognizes `ospf-N` but does not fully preserve `ospfv3-N`. The new collector-side parser should correct this while preserving OSPF versus OSPFv3 family identity.
 
 Implementation was deliberately paused at this point for design discussion.
+
+## 2026-08-19 - Documentation hardening pass
+
+- Added operational pipeline documentation covering collector ingest, durable backlog, GX10 replay-safe ingest, AI-result validation, and failure behavior.
+- Added ClickHouse schema and sink-contract documentation.
+- Added Grafana datasource, drilldown, and NOC-view behavior documentation.
+- Added an architecture decision log covering capture-first behavior, collector/GX10 ownership, LLM authority limits, transport boundaries, and master-repository policy.
+- Added a controlled normalizer migration document with parser-by-parser parity gates.
+- Added a public publication checklist for secrets, restricted terms, fixtures, tests, diffs, and migration provenance.
+- Expanded the master README so these documents are discoverable from the repository front page.
+- No production path was changed as part of this documentation pass.
