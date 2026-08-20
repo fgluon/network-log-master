@@ -51,6 +51,12 @@ Collector / ClickHouse / Grafana
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - end-to-end design and ownership boundaries.
 - [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) - verified project checkpoint and immediate resume point.
 - [`docs/DATA_CONTRACTS.md`](docs/DATA_CONTRACTS.md) - raw, normalized, incident, and AI-result contracts.
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) - ingest, backlog, validation, replay, and failure behavior.
+- [`docs/CLICKHOUSE.md`](docs/CLICKHOUSE.md) - durable table and sink contracts.
+- [`docs/GRAFANA.md`](docs/GRAFANA.md) - datasource, drilldown, and NOC-view behavior.
+- [`docs/NORMALIZER_MIGRATION.md`](docs/NORMALIZER_MIGRATION.md) - controlled collector-side normalization migration.
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) - architecture decision log and rationale.
+- [`docs/PUBLICATION_CHECKLIST.md`](docs/PUBLICATION_CHECKLIST.md) - required public-release gates.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) - ordered build sequence and gates.
 - [`docs/PROJECT_JOURNAL.md`](docs/PROJECT_JOURNAL.md) - append-only engineering history.
 - [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md) - concise instructions for resuming work in a new AI session.
