@@ -222,3 +222,53 @@ def test_default_registry_keeps_unknown_nxos_ethport_generic():
     assert event.attention_eligible is True
     assert event.attributes["normalization_path"] == "generic"
     assert "parser" not in event.attributes
+
+
+def test_default_registry_applies_nxos_ospf_retransmissions():
+    event = normalize_record(
+        {
+            "hostname": "switch-example",
+            "vendor_hint": "Cisco",
+            "os_family_hint": "NX-OS",
+            "message": (
+                "%OSPF-5-NBR_RETRANSMISSIONS: "
+                "ospf-1 [1234] Nbr 192.0.2.60 "
+                "re-transmits routing information"
+            ),
+        }
+    )
+
+    assert event.event_family == "ospf"
+    assert event.protocol == "ospf"
+    assert event.signal_type == "degradation"
+    assert event.state == "retransmissions"
+    assert event.attributes["parser"] == "nxos-ospf-retransmissions"
+    assert (
+        event.entity_key
+        == "OSPF|switch-example|ospf-1|192.0.2.60"
+    )
+
+
+def test_default_registry_applies_nxos_ospfv3_retransmissions():
+    event = normalize_record(
+        {
+            "hostname": "switch-example",
+            "vendor_hint": "Cisco",
+            "os_family_hint": "NX-OS",
+            "message": (
+                "%OSPFV3-5-NBR_RETRANSMISSIONS: "
+                "ospfv3-2 [5678] Nbr 2001:db8::60 "
+                "re-originates routing information"
+            ),
+        }
+    )
+
+    assert event.event_family == "ospfv3"
+    assert event.protocol == "ospf"
+    assert event.signal_type == "degradation"
+    assert event.state == "retransmissions"
+    assert event.attributes["parser"] == "nxos-ospf-retransmissions"
+    assert (
+        event.entity_key
+        == "OSPF|switch-example|ospfv3-2|2001:db8::60"
+    )
