@@ -1,72 +1,151 @@
 # Roadmap
 
-The project advances through deterministic gates. Each stage should be proven manually and with replay before service automation is expanded.
+The project advances through deterministic, validated gates. `docs/CURRENT_STATE.md` is the authority for the exact current execution order and the single `NEXT` item. This roadmap describes the broader milestone sequence.
 
-## Phase 1 - Deterministic normalization on the collector
+## Milestone 1 - Deterministic normalizer consolidation
 
-1. maintain the normalized event schema and fixture harness
-2. complete platform-specific enrichment migration from transitional GX10 logic
-3. add Cisco NX-OS OSPF/OSPFv3 retransmission parsing
-4. add remaining high-value Arista and Cisco IOS XR event families
-5. add stable generic fingerprint/entity fallback for unknown events
-6. maintain an unknown-event inventory so parser coverage can improve without losing data
+Status: `DONE`
 
-Exit gate: synthetic fixtures, negative-path tests, public-repository sanitation, and replay parity are clean.
+Completed:
 
-## Phase 2 - Prepared observation handoff
+- consolidated active normalizer development into `components/normalizer/`
+- preserved standalone repository history during import
+- implemented and tested selected EOS, IOS XR, NX-OS ETHPORT, OSPF, and OSPFv3 normalization
+- established trusted private platform-resolution boundary
+- completed selected stored-observation replay/parity
+- preserved unknown/unmapped capture-first behavior
+- reached 73 passing tests
 
-1. define the normalized collector-to-GX10 file/stream contract
-2. prove deterministic serialization and replay
-3. prove no raw observation is lost when parsers fail
-4. compare new collector-side normalization against the transitional GX10 enrichment path
+Exit gate completed: replay/parity finished with 21 strict matches, 3 intentional OSPFv3 differences, and 0 unexpected differences.
 
-Exit gate: parity differences are understood and intentional.
+Production cutover remains a later controlled migration task and is not required to finish the rebuild-documentation milestone.
 
-## Phase 3 - Deterministic incident engine on GX10
+## Milestone 2 - Collector rebuild package
 
-1. implement incident identity and lifecycle
+Status: `IN PROGRESS`
+
+Goal: reconstruct the working collector from public artifacts plus operator-supplied environment values.
+
+Completed capture includes:
+
+- package versions and package verification
+- configuration rendering
+- Vector ingest, transforms, ClickHouse sinks, AI-result ingestion, and GX10 spool output
+- ClickHouse schema, users, grants, and settings profile
+- Grafana ClickHouse datasources
+- Grafana HTTPS/TLS behavior
+- Certbot renewal behavior
+- SFTP/chroot transport, ACLs, and bind mounts
+- AI-result validation gate
+- spool retention
+- independent collector runtime verification
+- Grafana 13 dashboard resource capture
+- proven API-based dashboard restoration and verification tooling
+
+Remaining collector gates:
+
+1. secure Grafana administrator bootstrap in the clean-machine runtime installer
+2. dashboard restore/verify integration into the runtime installer
+3. package-install no-autostart protection before first configuration
+4. installer structural, credential-exposure, and public-safety validation
+5. complete collector operator/rebuild documentation
+6. final collector sanitation/publication gate
+7. clean-machine collector rebuild validation when practical
+
+Exit gate: another engineer/AI can reconstruct the current collector on a clean server from the repository plus operator-supplied environment values without undocumented implementation memory.
+
+## Milestone 3 - GX10 rebuild capture
+
+Status: `NOT STARTED`
+
+Goal: capture and reconstruct the currently functional GX10 implementation before adding new incident-engine architecture.
+
+Required capture includes:
+
+- Ubuntu/runtime package requirements
+- NVIDIA/GB10 environment dependencies
+- Ollama runtime and model configuration
+- read-only backlog fetcher
+- local durable SQLite state schema
+- replay-safe/idempotent ingest implementation
+- current deterministic enrichment/classification
+- systemd services/timers
+- result-return implementation
+- restricted transport configuration
+- validation/verifier scripts
+- operator rebuild documentation
+
+Exit gate: another engineer/AI can reconstruct the current functional GX10 on a clean server from the repository plus operator-supplied environment values.
+
+## Milestone 4 - Two-server rebuild acceptance
+
+Status: `NOT STARTED`
+
+1. reconcile collector and GX10 rebuild assumptions
+2. document the complete operator-supplied environment-value contract
+3. document service installation/start order and cross-server dependencies
+4. validate public examples and fixtures
+5. run final repository sanitation/publication gates
+6. perform clean two-server rebuild validation when practical
+7. verify no undocumented memory is required
+
+Exit gate:
+
+> Two clean servers, this public repository, and operator-supplied environment values are sufficient to reconstruct the current functional system.
+
+## Milestone 5 - Production normalizer integration
+
+Status: `DEFERRED UNTIL REBUILD CAPTURE IS CLOSED`
+
+After the current system is reconstructable:
+
+1. design collector-side normalizer production integration
+2. establish explicit rollback behavior
+3. run shadow/parallel validation where practical
+4. promote only after replay and production validation remain clean
+5. retire transitional GX10 vendor parsing deliberately
+
+## Milestone 6 - Deterministic incident engine on GX10
+
+Status: `FUTURE IMPLEMENTATION`
+
+1. implement canonical incident identity and lifecycle
 2. implement append-only transitions/evidence
-3. implement repeat and burst accounting
-4. implement 60-minute, 180-minute, and 24-hour compact context summaries
+3. implement repeat/burst accounting
+4. implement rolling compact context summaries
 5. implement replay/idempotency tests
-6. exercise manually against stored observations
+6. exercise against stored prepared observations
 
 Exit gate: replaying the same input cannot create duplicate canonical incidents or contradictory state.
 
-## Phase 4 - Steady-state correlation service
+## Milestone 7 - Steady-state local reasoning
 
-1. package the correlator as a managed service
-2. add health and backlog telemetry
-3. add deterministic LLM wake policy
-4. preserve safe failure modes when the model runtime is unavailable
+Status: `FUTURE IMPLEMENTATION`
 
-## Phase 5 - Local LLM reasoning
+1. package correlation as a managed service
+2. add health/backlog telemetry
+3. implement deterministic LLM wake policy
+4. assemble compact incident packets
+5. track model/prompt versions
+6. require structured model output
+7. keep deterministic facts separate from model interpretation
+8. preserve safe failure behavior when inference is unavailable
 
-1. assemble compact incident packets only
-2. establish model/prompt version tracking
-3. require structured output suitable for validation
-4. keep deterministic facts separate from model interpretation
-5. benchmark latency and usefulness before increasing invocation frequency
+## Milestone 8 - AI presentation refinement
 
-## Phase 6 - AI result publication
+Status: `FUTURE IMPLEMENTATION`
 
-1. emit validated JSON result files
-2. use the existing write-only return transport
-3. pass results through the collector validation gate
-4. store accepted results in ClickHouse
-5. quarantine rejected results with a reason
-
-## Phase 7 - Grafana AI presentation
-
-1. add incident and AI-analysis panels only after contracts stabilize
-2. retain drilldowns into the underlying raw logs
+1. present validated incident/AI records in Grafana after contracts stabilize
+2. preserve drilldown to underlying raw observations
 3. keep Grafana stateless with respect to incident truth
-4. avoid turning the primary NOC view into a permanent raw-log wall
+4. avoid turning the primary NOC view into a raw-log wall
 
-## Phase 8 - Consolidation and operations
+## Continuity gate
 
-1. move verified component code into this master repository in controlled commits
-2. keep public documentation synchronized with deployed behavior
-3. add recovery and rebuild runbooks
-4. add CI/publication gates for tests, secrets, banned terms, and unsafe fixtures
-5. periodically verify documentation against live systems
+After every completed project sub-section:
+
+1. validate the intended checkpoint
+2. append the result to `docs/PROJECT_JOURNAL.md`
+3. push the journal update to GitHub
+4. update `docs/CURRENT_STATE.md` when execution order/current state changes
+5. only then proceed materially into the next sub-section
