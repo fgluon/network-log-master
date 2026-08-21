@@ -308,3 +308,98 @@ Documents that should receive targeted additions during final collector document
 ### Next action
 
 Update `docs/CURRENT_STATE.md` first because it is the execution authority. Then update `docs/AI_HANDOFF.md`, `docs/ROADMAP.md`, `README.md`, and `components/collector/README.md` before returning to Grafana implementation work. Each completed documentation sub-section must be journaled and pushed before proceeding to the next.
+
+## 2026-08-21 02:05 PDT - Recovery and execution documentation refresh completed
+
+### Goal
+
+Bring the durable repository documentation into alignment with the published collector rebuild checkpoint, the proven Grafana 13 restore mechanism, the two-clean-server rebuild acceptance criterion, and the new GitHub-based continuity rules before returning to implementation work.
+
+### Work completed
+
+Created a canonical recovery entry point:
+
+- `docs/START_HERE.md`
+
+Updated the execution and recovery control documents:
+
+- `docs/CURRENT_STATE.md`
+- `docs/AI_HANDOFF.md`
+- `docs/ROADMAP.md`
+- top-level `README.md`
+
+Updated collector/component recovery documentation:
+
+- `components/collector/README.md`
+- `components/collector/REBUILD_STATUS.md`
+
+Updated durable architecture/operations documentation:
+
+- `docs/ARCHITECTURE.md`
+- `docs/OPERATIONS.md`
+- `docs/GRAFANA.md`
+- `docs/NORMALIZER_MIGRATION.md`
+
+Updated durable decision/publication rules:
+
+- `docs/DECISIONS.md`
+- `docs/PUBLICATION_CHECKLIST.md`
+
+Documents reviewed and intentionally left unchanged because their current contracts remain accurate:
+
+- `docs/CLICKHOUSE.md`
+- `docs/DATA_CONTRACTS.md`
+
+### Execution-control result
+
+`docs/CURRENT_STATE.md` now:
+
+- records the 2026-08-21 collector rebuild checkpoint
+- records the completed Grafana 13 dashboard restore proof
+- distinguishes completed capture from unfinished runtime-installer integration
+- defines the complete numbered project execution order
+- contains exactly one item marked `NEXT`
+
+The single current `NEXT` item is secure Grafana administrator bootstrap wiring in `components/collector/install/install-runtime.sh`.
+
+### Durable decisions recorded
+
+Added/clarified durable decisions that:
+
+- rebuildability is a formal project acceptance criterion
+- two clean servers plus the public repository and operator-supplied environment values must be enough to reconstruct the current functional system
+- Grafana dashboards are restored through the supported `dashboard.grafana.app/v2` API rather than direct SQLite writes
+- GitHub documentation/journal state is the durable continuity mechanism for project execution
+- current functional implementation is captured before substantial modernization work
+
+### Publication/recovery rules recorded
+
+The repository now explicitly requires:
+
+- `docs/START_HERE.md` as the canonical fresh-session entry point
+- `docs/CURRENT_STATE.md` as execution authority with exactly one `NEXT` item
+- component `REBUILD_STATUS.md` for detailed rebuild evidence
+- append-only `docs/PROJECT_JOURNAL.md` for chronological decisions/results
+- journal-and-push after every completed validated sub-section before materially entering the next one
+
+### Git commits created during this documentation refresh
+
+- `7a2b028` — add canonical project recovery entry point
+- `dbc5092` — refresh current state and execution order
+- `3c86195` — refresh AI handoff for collector rebuild phase
+- `2bea66b` — align roadmap with rebuild milestones
+- `283b3e5` — refresh repository overview and recovery entry points
+- `ea4699f` — expand collector rebuild component documentation
+- `860ae88` — add rebuildability contract to architecture
+- `7d76b2e` — document Grafana 13 rebuild and dashboard restore contract
+- `10858d6` — record rebuildability and Grafana restore decisions
+- `972378a` — add rebuild and continuity publication gates
+- `bb0348a` — document rebuild operations and continuity rules
+- `4b133ba` — clarify normalizer migration is deferred during rebuild capture
+- `9e6a2cf` — align collector rebuild status with execution authority
+
+All writes were made directly to the repository `main` branch through the GitHub connector. No production service/configuration was changed by this documentation sub-section.
+
+### Next action
+
+Return to collector implementation work at the single `NEXT` item in `docs/CURRENT_STATE.md`: finish secure Grafana administrator bootstrap wiring in `components/collector/install/install-runtime.sh`. After that sub-section passes its intended validation, append and push its journal entry before moving to dashboard restore/verification wiring.
