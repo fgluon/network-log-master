@@ -55,17 +55,45 @@ Never commit:
 
 Use RFC documentation address space and synthetic hostnames in examples.
 
-## Current resume point
+## Current verified normalizer checkpoint
 
-The next normalizer task is the isolated Cisco NX-OS OSPF/OSPFv3 retransmission parser. Before writing or registering it, verify the current live development checkout and full test baseline.
-
-Known generic-family behavior must be preserved:
+The active normalizer source is `components/normalizer/` in this master repository.
 
 ```text
-OSPF  -> event_family ospf
-OSPFv3 -> event_family ospfv3
+18ec113 Fix public repo gate for monorepo layout
+7f7f592 Add Cisco NX-OS OSPF retransmission parser
+81a3812 Enable NX-OS OSPF parser in default registry
+70 tests passing
+public repository gate passing
 ```
 
-Do not let Arista EOS or Cisco IOS XR OSPF events enter the NX-OS parser.
+Implemented parser scope now includes:
 
-The production normalizer path has not yet been switched over; transitional GX10 enrichment remains available as a parity reference.
+- Arista EOS BGP adjacency
+- Cisco IOS XR BGP adjacency
+- Cisco NX-OS ETHPORT state
+- Cisco NX-OS OSPF retransmission degradation
+- Cisco NX-OS OSPFv3 retransmission degradation
+
+The NX-OS OSPF parser preserves `ospf` versus `ospfv3`, uses protocol `ospf`, deterministic `OSPF|device|process|neighbor` identity, rejects mismatched process/event-code families, and fails open to the generic observation path on malformed or cross-platform input.
+
+## Current resume point - replay/parity
+
+Do not immediately add another parser.
+
+The next task is to inventory and exercise replay/parity against stored observations and the transitional GX10 enrichment path.
+
+Required comparison fields:
+
+- event family
+- vendor/platform
+- protocol
+- signal type
+- entity type
+- entity key
+- state
+- structured attributes
+
+Expected intentional difference: collector-side OSPFv3 parsing preserves the `ospfv3-N` process identity that the transitional GX10 classifier does not fully preserve.
+
+The production normalizer path has not yet been switched over. Do not cut over until replay, parity, unknown-event visibility, and idempotency are proven.
