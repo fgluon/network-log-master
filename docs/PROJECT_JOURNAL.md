@@ -30,6 +30,8 @@ Each substantial work-session entry should record, when applicable:
 
 Additional rules:
 
+- Every completed project sub-section must be recorded in this journal and pushed to GitHub before proceeding materially into the next sub-section.
+- A sub-section is considered complete only after its intended validation/checkpoint passes; the journal entry should record that validation evidence and the next action.
 - Do not silently rewrite history when an earlier assumption is later found to be wrong. Append a new entry that supersedes or corrects the earlier entry.
 - Do not use the journal as a substitute for `CURRENT_STATE.md`. Execution order must remain explicit in `CURRENT_STATE.md`.
 - Do not record secrets, credentials, private keys, production addresses, customer-identifying logs, private operator identities, or restricted historical branding.
@@ -258,3 +260,19 @@ GX10 remains the next major component milestone after the collector is closed.
 ### Next action
 
 Refresh `docs/CURRENT_STATE.md` so it contains a strict numbered execution order with exactly one item marked `NEXT`. Then resume collector Grafana clean-machine integration from the published `e8df224` checkpoint. Do not begin GX10 capture until the collector milestone execution order is explicitly advanced or intentionally reprioritized in `CURRENT_STATE.md`.
+
+## 2026-08-21 02:00 PDT - Journal-after-each-subsection rule adopted
+
+### Decision
+
+From this point forward, every completed project sub-section must be journaled and pushed to GitHub before materially proceeding into the next sub-section.
+
+A sub-section is complete only after its intended validation/checkpoint passes. The corresponding journal entry should capture the completed work, validation evidence, material decisions or corrections, and the explicit next action.
+
+### Purpose
+
+This makes GitHub the durable continuity mechanism for the project. A fresh engineer or AI session should be able to recover progress from the repository rather than depending on conversational memory.
+
+### Next action
+
+Update `docs/CURRENT_STATE.md` with the strict execution order and exactly one item marked `NEXT`, then continue collector Grafana clean-machine integration.
