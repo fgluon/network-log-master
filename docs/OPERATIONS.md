@@ -4,6 +4,8 @@
 
 This document records the current operational behavior of the observability pipeline without publishing environment-specific credentials, addresses, hostnames, or firewall policy.
 
+For the exact current execution order, use `docs/CURRENT_STATE.md`. For fresh-session recovery, begin with `docs/START_HERE.md`.
+
 ## Collector ingest
 
 Network devices send syslog to the collector. Vector is the collection and fan-out layer.
@@ -26,13 +28,15 @@ Vector writes raw observations to ClickHouse. The production sink has a known op
 
 Do not remove that exception merely because the configuration looks unusual. Re-enable startup health checking only after testing the exact authentication behavior with the deployed ClickHouse/Vector combination.
 
+ClickHouse application listeners are collector-local. GX10 does not receive direct ClickHouse access.
+
 ## Durable retention
 
 Current retention policy:
 
 - raw syslog observations: approximately 12 months
 - validated AI updates: approximately 12 months
-- compressed AI/backlog files: approximately 90 days
+- compressed GX10 backlog files: approximately 90 days
 
 Retention policy is independent of AI decisions. Raw observations are not deleted because the reasoning layer ignored or suppressed them.
 
@@ -92,6 +96,43 @@ Current validation policy includes:
 
 Validated records are then ingested into ClickHouse and become available to Grafana.
 
+## Grafana operational boundary
+
+Grafana is served over HTTPS by the collector and reads ClickHouse through captured datasource identities.
+
+Current dashboard reconstruction uses the supported Grafana 13 `dashboard.grafana.app/v2` API. Rebuild tooling must not write directly into Grafana's SQLite database.
+
+The clean-machine Grafana bootstrap sequence is being finalized so that first startup is loopback-only, administrator credentials are operator-supplied, and password reset uses `--password-from-stdin` before normal HTTPS exposure.
+
+## Clean-machine rebuild operations
+
+The collector rebuild package separates installation from verification:
+
+- package installer: `components/collector/install/install-packages.sh`
+- package verifier: `components/collector/install/verify-packages.sh`
+- configuration renderer: `components/collector/install/render-configs.py`
+- runtime installer: `components/collector/install/install-runtime.sh`
+- independent runtime verifier: `components/collector/install/verify-runtime.sh`
+
+The runtime installer is intended for a clean collector. Do not execute it against the working reference collector.
+
+Rebuild inputs that are private or environment-specific are supplied by the operator through environment values and/or private files. They are not stored in the public repository.
+
+The public rebuild should render concrete runtime configuration before starting services rather than permanently enabling unsafe environment interpolation solely to make templates work.
+
+## External connectivity prerequisites
+
+Firewall/nftables reconstruction is intentionally outside the public rebuild scope.
+
+Operator documentation should state the required functional connectivity, for example:
+
+- network devices must be able to deliver syslog to the collector's configured UDP/TCP syslog listeners
+- operators/GX10 must reach the configured restricted SSH/SFTP service
+- users must reach Grafana HTTPS
+- certificate issuance/renewal must satisfy the chosen ACME validation requirements, including temporary HTTP validation reachability when applicable
+
+Do not encode production firewall allowlists or addresses in the public repository.
+
 ## Failure behavior
 
 The system should fail in the direction of preserving evidence:
@@ -101,6 +142,8 @@ The system should fail in the direction of preserving evidence:
 - malformed AI output -> reject/quarantine, do not write directly to ClickHouse
 - transport interruption -> retry from durable file/checkpoint state
 - replay -> no duplicate canonical records
+- dashboard restore uncertainty -> validate through API/dry-run rather than mutate Grafana database state directly
+- rebuild mismatch -> stop and reconcile against verified live behavior rather than guessing
 
 ## Operational change rule
 
@@ -113,3 +156,13 @@ Before promoting any new deterministic component into the production path:
 5. document intentional parity differences
 6. verify idempotency
 7. only then automate the steady-state service path
+
+## Documentation/continuity rule
+
+After each completed validated project sub-section:
+
+1. append the result, validation evidence, important decisions/corrections, and next action to `docs/PROJECT_JOURNAL.md`
+2. push that journal update to GitHub before materially entering the next sub-section
+3. update `docs/CURRENT_STATE.md` when verified state or execution order changes
+
+This repository is the durable continuity mechanism; conversational context is not an operational dependency.
