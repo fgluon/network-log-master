@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+ROOT="/var/spool/vector-ai"
+RETENTION_MINUTES=$((90 * 24 * 60))
+
+# Vector AI Agent Retention Policy
+# Delete AI spool files older than 90 days.
+find "$ROOT" -type f -mmin +"$RETENTION_MINUTES" -print -delete
+
+# Remove empty day/month/year directories after cleanup.
+find "$ROOT" -depth -type d -empty ! -path "$ROOT" -delete

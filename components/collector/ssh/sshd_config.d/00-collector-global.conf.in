@@ -1,0 +1,25 @@
+# Collector SSH global policy.
+#
+# Replace __SSH_PORT__ with the deployment-specific SSH port.
+#
+# ListenAddress is intentionally not specified. The live collector uses
+# OpenSSH's dual-stack wildcard listeners for both IPv4 and IPv6.
+
+Port __SSH_PORT__
+
+PermitRootLogin prohibit-password
+
+PubkeyAuthentication yes
+PasswordAuthentication yes
+KbdInteractiveAuthentication no
+
+UsePAM yes
+
+X11Forwarding yes
+PermitTTY yes
+AllowTcpForwarding yes
+AllowAgentForwarding yes
+
+PermitUserEnvironment no
+
+AuthorizedKeysFile .ssh/authorized_keys .ssh/authorized_keys2

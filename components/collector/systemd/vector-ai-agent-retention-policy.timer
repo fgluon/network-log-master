@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Vector AI Agent Retention Policy Daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=30m
+Unit=vector-ai-agent-retention-policy.service
+
+[Install]
+WantedBy=timers.target

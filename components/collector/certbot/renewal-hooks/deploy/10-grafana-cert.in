@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+[ "${RENEWED_LINEAGE:-}" = "/etc/letsencrypt/live/__CERT_NAME__" ] || exit 0
+
+install -o grafana -g grafana -m 0440 \
+  "$RENEWED_LINEAGE/fullchain.pem" \
+  /etc/grafana/tls/fullchain.pem
+
+install -o grafana -g grafana -m 0400 \
+  "$RENEWED_LINEAGE/privkey.pem" \
+  /etc/grafana/tls/privkey.pem
+
+systemctl restart grafana-server

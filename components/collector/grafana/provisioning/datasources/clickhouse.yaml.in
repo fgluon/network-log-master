@@ -1,0 +1,36 @@
+# Grafana ClickHouse datasource provisioning template.
+#
+# DO NOT install this .in file directly.
+# Replace both placeholders before deployment:
+#   __CLICKHOUSE_HOST__
+#   __GRAFANA_READER_PASSWORD__
+#
+# Datasource names and UIDs intentionally match the live
+# deployment because dashboard resources bind to them.
+
+apiVersion: 1
+
+datasources:
+  - name: "grafana-clickhouse-datasource-1"
+    uid: "efvaztlrk8ow0a"
+    type: "grafana-clickhouse-datasource"
+    access: "proxy"
+    isDefault: false
+    basicAuth: false
+    withCredentials: false
+    editable: true
+    jsonData: {"configMode":"single-table","host":"__CLICKHOUSE_HOST__","logs":{"contextColumns":["source_ip","hostname"],"defaultDatabase":"observability","defaultTable":"syslog","filterTimeColumn":"timestamp","levelColumn":"severity","messageColumn":"message","otelVersion":"latest","selectContextColumns":false,"timeColumn":"timestamp"},"pdcInjected":false,"port":9000,"protocol":"native","signalType":"logs","traces":{"defaultTable":"otel_traces","durationUnit":"nanoseconds","otelVersion":"latest"},"username":"grafana_reader","version":"4.20.0"}
+    secureJsonData:
+      password: __GRAFANA_READER_PASSWORD__
+
+  - name: "grafana-clickhouse-logs"
+    uid: "bfvik20ilwoaof"
+    type: "grafana-clickhouse-datasource"
+    access: "proxy"
+    isDefault: false
+    basicAuth: false
+    withCredentials: false
+    editable: true
+    jsonData: {"configMode":"single-table","host":"__CLICKHOUSE_HOST__","logs":{"contextColumns":["hostname","source_ip","device"],"defaultDatabase":"observability","defaultTable":"grafana_logs","filterTimeColumn":"timestamp","levelColumn":"level","messageColumn":"body","otelVersion":"latest","selectContextColumns":true,"timeColumn":"timestamp"},"pdcInjected":false,"port":8123,"protocol":"http","secure":false,"signalType":"logs","traces":{"defaultTable":"otel_traces"},"username":"grafana_reader","version":"4.20.0"}
+    secureJsonData:
+      password: __GRAFANA_READER_PASSWORD__

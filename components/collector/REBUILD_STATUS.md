@@ -1,0 +1,321 @@
+# Collector rebuild checkpoint
+
+Status: validated public capture checkpoint. Final clean-machine integration is still in progress.
+
+## Rebuild objective
+
+Two clean servers, this public repository, and operator-supplied environment values must be sufficient to reconstruct the functional deployment without undocumented implementation knowledge.
+
+Deployment-specific secrets, credentials, addresses, SSH keys, certificate private keys, and private identity values are intentionally not stored in this repository.
+
+## Previous completed milestone
+
+The normalizer replay/parity milestone was completed before this collector checkpoint.
+
+Reference public commit:
+
+`4220f50474d608fd8745b4465398af521d7625bd`
+
+The normalizer test suite had 73 passing tests. Live replay parity used 24 samples with 21 strict matches, 3 intentional differences, and 0 unexpected differences.
+
+## Collector package layer
+
+Captured versions include:
+
+- Vector 0.57.0-1
+- ClickHouse server/client 26.3.17.110
+- Grafana OSS 13.1.1
+- Grafana ClickHouse plugin 4.20.0
+- Certbot 5.7.0
+
+The package verifier passed against the reference collector:
+
+`COLLECTOR_PACKAGE_VERIFY=PASS`
+
+The rebuild package installer installs explicit captured versions. It does not invent an apt hold policy that is absent from production.
+
+## Configuration renderer
+
+`install/render-configs.py` renders environment-specific configuration using operator-supplied values.
+
+It renders:
+
+- Vector configuration
+- ClickHouse access SQL
+- Grafana ClickHouse datasource provisioning
+- Grafana HTTPS systemd override
+- Grafana certificate renewal deploy hook
+
+Service-account passwords are supplied using operator-owned password files rather than being committed to the repository.
+
+## Vector
+
+The current Vector implementation is captured.
+
+Important behavior preserved:
+
+- UDP syslog ingestion
+- TCP syslog ingestion
+- current normalization/transforms
+- ClickHouse syslog sink
+- ClickHouse AI-update sink
+- AI result ingestion
+- durable compressed GX10 spool output
+- existing disabled ClickHouse sink health checks
+- existing Vector validation behavior
+
+GX10 spool output remains under `/var/spool/vector-ai` using UTC time partitioning, JSON Lines, and zstd compression.
+
+The live runtime verifier passed:
+
+`VECTOR_CRITICAL_CONFIG_PARITY=PASS`
+
+`VECTOR_SYSLOG_LISTENERS=PASS`
+
+## ClickHouse
+
+Captured database objects:
+
+- `observability.syslog`
+- `observability.ai_updates`
+- `observability.grafana_logs`
+
+Captured access policy includes:
+
+- `grafana_reader`
+- `vector_ingest`
+- Grafana read-only settings profile
+- required SELECT grants
+- required INSERT grants
+
+ClickHouse application listeners remain loopback-only.
+
+The independent live verifier passed:
+
+`CLICKHOUSE_OBJECT_CONTRACT=PASS`
+
+`CLICKHOUSE_COLUMN_CONTRACT=PASS`
+
+`CLICKHOUSE_USER_POLICY=PASS`
+
+`CLICKHOUSE_GRANT_CONTRACT=PASS`
+
+`CLICKHOUSE_LOOPBACK_LISTENERS=PASS`
+
+## Grafana datasources
+
+Both required ClickHouse datasources are captured with their stable UIDs and current behavior.
+
+Datasource UIDs:
+
+- `efvaztlrk8ow0a`
+- `bfvik20ilwoaof`
+
+The live verifier passed:
+
+`GRAFANA_DATASOURCE_CONTRACT=PASS`
+
+## Grafana HTTPS and certificates
+
+Captured:
+
+- HTTPS systemd override
+- TCP/443 configuration
+- TLS ownership/mode contract
+- Certbot renewal service
+- Certbot renewal timer
+- Grafana certificate deploy hook
+
+The live verifier passed:
+
+`GRAFANA_HTTPS_OVERRIDE=PASS`
+
+`GRAFANA_HTTPS_HEALTH=PASS`
+
+`CERTBOT_RUNTIME_CONTRACT=PASS`
+
+Firewall/nftables reconstruction is intentionally outside this capture milestone. Rebuild documentation should state required network prerequisites without reproducing deployment-specific firewall rules.
+
+## Grafana dashboards
+
+Four dashboards are captured as native Grafana 13 unified-resource documents using:
+
+`dashboard.grafana.app/v2`
+
+Captured files:
+
+- `device-logs.json`
+- `logs-dash.json`
+- `noc-view.json`
+- `noc-view-copy-backup.json`
+
+Production API testing proved:
+
+- every captured dashboard round-trips through the v2 resource API
+- every captured `spec` exactly matches production
+- POST is the supported create operation
+- PUT is the supported full replacement operation
+- `dryRun=All` performs non-persistent validation
+- dry-run create does not persist
+- dry-run replacement does not alter production resource versions
+
+Permanent scripts are captured:
+
+- `grafana/scripts/dashboard_api.py`
+- `grafana/scripts/restore-dashboards.py`
+- `grafana/scripts/verify-dashboards.py`
+
+Validation completed:
+
+`GRAFANA_UNIFIED_RESOURCE_ROUND_TRIP=PASS`
+
+`GRAFANA_DRYRUN_RESTORE_PROOF=PASS`
+
+`GRAFANA_DASHBOARD_VERIFY=PASS`
+
+`GRAFANA_DASHBOARD_RESTORE_DRYRUN=PASS`
+
+`GRAFANA_DASHBOARD_LIVE_NONDESTRUCTIVE_TEST=PASS`
+
+Grafana 13.1.1 was also verified to support:
+
+`grafana cli admin reset-admin-password --password-from-stdin`
+
+The secure administrator bootstrap still needs to be wired into the clean-machine runtime installer.
+
+## Collector transport boundary
+
+Captured:
+
+- restricted SFTP service accounts
+- chroot configuration
+- SSH Match policies
+- authorized-key file placement contract
+- service-account filesystem ownership/modes
+- ACLs
+- read-only GX10 spool bind mount
+- write-only result-return boundary
+- result incoming/ready/rejected directory behavior
+
+Actual authorized keys are not stored in this repository.
+
+The independent live verifier passed:
+
+`TRANSPORT_VERIFY=PASS`
+
+## AI result gate
+
+Captured:
+
+- result validation implementation
+- systemd service
+- systemd timer
+- service filesystem-access drop-in
+- incoming/ready/rejected workflow
+
+The live implementation and public capture were validated for exact implementation parity where naming is not environment-specific.
+
+## GX10 spool retention
+
+The public rebuild uses neutral retention naming.
+
+The reference collector still uses an older deployment-specific unit name, so runtime verification intentionally verifies behavior rather than requiring identical unit names.
+
+Verified behavior:
+
+- daily execution
+- persistent timer
+- 30-minute randomized delay
+- 90-day retention
+- expired-file deletion
+- empty-directory cleanup
+
+Validation completed:
+
+`RETENTION_SCRIPT_CONTRACT=PASS`
+
+`RETENTION_RUNTIME_CONTRACT=PASS`
+
+## Independent collector runtime verification
+
+The complete independent verifier was run against the working collector.
+
+It validated:
+
+- package versions
+- service state
+- result-gate implementation
+- retention behavior
+- transport
+- ClickHouse schema
+- ClickHouse columns
+- ClickHouse users and grants
+- ClickHouse listener boundary
+- Vector configuration
+- Vector listeners
+- Grafana TLS
+- Grafana health
+- Grafana datasources
+- Certbot behavior
+
+Final result:
+
+`COLLECTOR_RUNTIME_VERIFY=PASS`
+
+## Current clean-machine installer state
+
+`install/install-runtime.sh` contains the current clean-machine reconstruction flow and includes a guard refusing use against an existing `observability` database.
+
+Do not execute it against the working reference collector.
+
+The following Grafana work is NOT yet integrated into that installer:
+
+1. Add `GRAFANA_ADMIN_PASSWORD_FILE` as an operator-supplied private input.
+2. Start Grafana initially on loopback only.
+3. Allow Grafana to initialize its database.
+4. Stop Grafana.
+5. Reset administrator user ID 1 with `--password-from-stdin`.
+6. Remove the bootstrap-only loopback override.
+7. Start the captured HTTPS configuration.
+8. Run `restore-dashboards.py`.
+9. Run `verify-dashboards.py`.
+
+Several attempts to patch this integration were aborted before file replacement because patch anchors or heredoc delimiters were incorrect. Those failed attempts did not modify `install-runtime.sh`.
+
+## Remaining collector work
+
+Resume in this order:
+
+1. Wire secure Grafana administrator bootstrap into `install-runtime.sh`.
+2. Wire dashboard restoration and verification into `install-runtime.sh`.
+3. Add a package-install no-autostart guard so Grafana cannot transiently expose an unconfigured first-start state.
+4. Re-run installer structural validation.
+5. Re-run public-safety validation.
+6. Complete `components/collector/README.md`.
+7. Complete operator-facing clean-machine rebuild documentation.
+8. Run the final staged public-repository sanitation gate.
+9. Perform a clean-machine end-to-end rebuild validation when practical.
+10. Close the collector milestone.
+
+## GX10 remaining milestone
+
+GX10 still needs the same complete capture/rebuild treatment.
+
+Known areas that still require durable public artifacts and validation include:
+
+- Ubuntu/runtime package reconstruction
+- NVIDIA/GB10 environment dependencies
+- Ollama configuration
+- model configuration
+- spool fetcher
+- SFTP transport
+- local SQLite state schema
+- deterministic ingest/idempotency
+- deterministic enrichment/classification
+- systemd service/timer configuration
+- local inference integration
+- result-return path
+- verification scripts
+- operator rebuild documentation
+
+The final project is complete only when both the collector and GX10 can be reconstructed from this public repository plus operator-supplied environment values.

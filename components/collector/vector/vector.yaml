@@ -1,0 +1,352 @@
+data_dir: /var/lib/vector
+
+secret:
+  clickhouse_secrets:
+    type: directory
+    path: "/etc/vector/secrets"
+    remove_trailing_whitespace: true
+
+sources:
+
+  syslog_udp:
+    type: socket
+    address: "${SYSLOG_UDP_ADDRESS}"
+    mode: udp
+
+    framing:
+      method: bytes
+
+    decoding:
+      codec: bytes
+
+  syslog_tcp:
+    type: syslog
+    address: "${SYSLOG_TCP_ADDRESS}"
+    mode: tcp
+
+
+  ai_results_ready:
+    type: file
+    include:
+      - "/var/spool/ai-results/ready/*.jsonl"
+    read_from: beginning
+    max_line_bytes: 262144
+
+transforms:
+
+  normalize_udp:
+    type: remap
+    inputs:
+      - syslog_udp
+
+    source: |
+      raw_message = string!(.message)
+      collector_time = .timestamp
+
+      peer_ip = string!(.host)
+      peer_port = .port
+
+      parsed, parse_err = parse_syslog(raw_message)
+
+      if parse_err == null {
+        if exists(parsed.timestamp) {
+          .device_timestamp = parsed.timestamp
+        }
+
+        . = merge(., parsed)
+        .parse_status = "parsed"
+      } else {
+        relaxed, relaxed_err = parse_regex(
+          raw_message,
+          r'^<(?P<pri>\d+)>\s*1\s+(?P<device_timestamp>\S+)\s+(?P<hostname>\S+)\s+(?P<message>.+)$'
+        )
+
+        if relaxed_err == null {
+          pri_text = string!(relaxed.pri)
+          ts_text = string!(relaxed.device_timestamp)
+
+          pri, pri_err = to_int(pri_text)
+          device_ts, ts_err = parse_timestamp(ts_text, format: "%+")
+
+          if pri_err == null && ts_err == null {
+            .pri = pri
+            .device_timestamp = device_ts
+            .hostname = string!(relaxed.hostname)
+            .message = string!(relaxed.message)
+            .version = 1
+
+            severity_names = [
+              "emerg",
+              "alert",
+              "crit",
+              "err",
+              "warning",
+              "notice",
+              "info",
+              "debug"
+            ]
+
+            severity_code = mod!(pri, 8)
+            severity_value = get!(severity_names, [severity_code])
+            .severity = string!(severity_value)
+
+            facility_code = to_int!(floor(pri / 8))
+
+            if facility_code >= 16 && facility_code <= 23 {
+              local_facilities = [
+                "local0",
+                "local1",
+                "local2",
+                "local3",
+                "local4",
+                "local5",
+                "local6",
+                "local7"
+              ]
+
+              local_index = facility_code - 16
+              facility_value = get!(local_facilities, [local_index])
+              .facility = string!(facility_value)
+            }
+
+            .parse_status = "parsed"
+            .parser = "nxos_relaxed"
+          } else {
+            .parse_status = "raw_unparsed"
+          }
+        } else {
+          legacy, legacy_err = parse_regex(
+            raw_message,
+            r'^<(?P<pri>\d+)>(?P<hostname>[^:]+):\s+(?P<device_time>\d{4}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\.\d+)\s+(?P<device_tz>[A-Za-z]+):\s+(?P<message>.+)$'
+          )
+
+          if legacy_err == null {
+            pri = to_int!(legacy.pri)
+
+            .pri = pri
+            .hostname = string!(legacy.hostname)
+            .message = string!(legacy.message)
+
+            # Preserve the device's timestamp exactly as sent.
+            # Collector arrival time remains authoritative.
+            .device_timestamp_text = string!(legacy.device_time)
+            .device_timezone_text = string!(legacy.device_tz)
+
+            severity_names = [
+              "emerg",
+              "alert",
+              "crit",
+              "err",
+              "warning",
+              "notice",
+              "info",
+              "debug"
+            ]
+
+            severity_code = mod(pri, 8)
+            severity_value = get!(severity_names, [severity_code])
+            .severity = string!(severity_value)
+
+            facility_code = to_int(floor(pri / 8))
+
+            if facility_code >= 16 && facility_code <= 23 {
+              local_facilities = [
+                "local0",
+                "local1",
+                "local2",
+                "local3",
+                "local4",
+                "local5",
+                "local6",
+                "local7"
+              ]
+
+              local_index = facility_code - 16
+              facility_value = get!(local_facilities, [local_index])
+              .facility = string!(facility_value)
+            }
+
+            .parse_status = "parsed"
+            .parser = "nxos_legacy"
+          } else {
+            .parse_status = "raw_unparsed"
+          }
+        }
+      }
+
+      .raw_message = raw_message
+      .source_ip = peer_ip
+      .source_port = peer_port
+      .source_type = "syslog"
+
+      .ingest_timestamp = collector_time
+      .timestamp = collector_time
+
+      .collector_local_time = format_timestamp!(
+        collector_time,
+        format: "%+",
+        timezone: "local"
+      )
+
+  normalize_tcp:
+    type: remap
+    inputs:
+      - syslog_tcp
+
+    source: |
+      .device_timestamp = .timestamp
+
+      collector_time = now()
+
+      .ingest_timestamp = collector_time
+      .timestamp = collector_time
+
+      .collector_local_time = format_timestamp!(
+        collector_time,
+        format: "%+",
+        timezone: "local"
+      )
+
+      .parse_status = "parsed"
+
+  prepare_clickhouse:
+    type: remap
+    inputs:
+      - normalize_udp
+      - normalize_tcp
+
+    source: |
+      if !exists(.device_timestamp) {
+        .device_timestamp = null
+      }
+
+      if !exists(.source_port) {
+        .source_port = 0
+      }
+
+      if !exists(.hostname) {
+        .hostname = ""
+      }
+
+      if !exists(.host) {
+        .host = ""
+      }
+
+      if !exists(.facility) {
+        .facility = ""
+      }
+
+      if !exists(.severity) {
+        .severity = ""
+      }
+
+      if !exists(.appname) {
+        .appname = ""
+      }
+
+      if !exists(.message) {
+        .message = ""
+      }
+
+      if !exists(.raw_message) {
+        .raw_message = ""
+      }
+
+      if !exists(.version) {
+        .version = 0
+      }
+
+      .event_json = encode_json(.)
+
+
+  prepare_ai_updates:
+    type: remap
+    inputs:
+      - ai_results_ready
+    drop_on_abort: true
+    source: |-
+      raw = string!(.message)
+      . = parse_json!(raw)
+      .raw_json = raw
+
+sinks:
+
+  ai_spool:
+    type: file
+    inputs:
+      - normalize_udp
+      - normalize_tcp
+
+    path: "/var/spool/vector-ai/%Y/%m/%d/%H/syslog-%Y%m%d-%H%M.jsonl.zst"
+    timezone: "UTC"
+
+    compression: zstd
+    idle_timeout_secs: 10
+
+    encoding:
+      codec: json
+      timestamp_format: rfc3339
+
+    framing:
+      method: newline_delimited
+
+  clickhouse_syslog:
+    type: clickhouse
+    inputs:
+      - prepare_clickhouse
+
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    healthcheck:
+      enabled: false
+    database: observability
+    table: syslog
+
+    format: json_each_row
+    skip_unknown_fields: true
+    date_time_best_effort: true
+
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "SECRET[clickhouse_secrets.clickhouse_password]"
+
+    encoding:
+      timestamp_format: rfc3339
+
+    batch:
+      max_events: 1000
+      timeout_secs: 1
+
+  clickhouse_ai_updates:
+    type: clickhouse
+    inputs:
+      - prepare_ai_updates
+
+    endpoint: "${CLICKHOUSE_ENDPOINT}"
+    healthcheck:
+      enabled: false
+    database: observability
+    table: ai_updates
+
+    format: json_each_row
+    skip_unknown_fields: true
+    date_time_best_effort: true
+
+    auth:
+      strategy: basic
+      user: "${CLICKHOUSE_USER}"
+      password: "SECRET[clickhouse_secrets.clickhouse_password]"
+
+    encoding:
+      timestamp_format: rfc3339
+
+    acknowledgements:
+      enabled: true
+
+    buffer:
+      type: disk
+      max_size: 536870912
+
+    batch:
+      max_events: 100
+      timeout_secs: 1

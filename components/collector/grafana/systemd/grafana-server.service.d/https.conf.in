@@ -1,0 +1,11 @@
+[Service]
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+Environment="GF_SERVER_PROTOCOL=https"
+Environment="GF_SERVER_HTTP_ADDR=0.0.0.0"
+Environment="GF_SERVER_HTTP_PORT=443"
+Environment="GF_SERVER_ROOT_URL=https://__GRAFANA_PUBLIC_HOST__/"
+Environment="GF_SERVER_CERT_FILE=/etc/grafana/tls/fullchain.pem"
+Environment="GF_SERVER_CERT_KEY=/etc/grafana/tls/privkey.pem"
+Environment="GF_SERVER_CERTS_WATCH_INTERVAL=5m"

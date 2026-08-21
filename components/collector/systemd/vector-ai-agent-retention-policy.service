@@ -1,0 +1,6 @@
+[Unit]
+Description=Vector AI Agent Retention Policy
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vector-ai-agent-retention-policy

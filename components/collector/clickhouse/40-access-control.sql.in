@@ -1,0 +1,56 @@
+-- ClickHouse service-account access-control template.
+--
+-- Rebuild order:
+--   00-database.sql
+--   10-syslog.sql
+--   20-ai-updates.sql
+--   30-grafana-logs.sql
+--   40-access-control.sql.in
+--
+-- The default administrative account is created/configured separately
+-- by the ClickHouse installation process.
+--
+-- Before executing this template, supply fresh passwords for the
+-- grafana_reader and vector_ingest service accounts.
+--
+-- The credential markers in the CREATE USER statements are intentionally
+-- not quoted SQL strings so this file cannot be executed accidentally
+-- before credentials are supplied.
+
+CREATE USER grafana_reader
+IDENTIFIED WITH sha256_password BY __GRAFANA_READER_PASSWORD__
+HOST ANY;
+
+CREATE USER vector_ingest
+IDENTIFIED WITH sha256_password BY __VECTOR_INGEST_PASSWORD__
+HOST ANY;
+
+CREATE SETTINGS PROFILE grafana_reader
+SETTINGS
+    readonly = 1,
+    max_execution_time CHANGEABLE_IN_READONLY
+TO grafana_reader;
+
+GRANT SELECT ON observability.ai_updates
+TO grafana_reader;
+
+GRANT SELECT ON observability.grafana_logs
+TO grafana_reader;
+
+GRANT SELECT ON observability.syslog
+TO grafana_reader;
+
+GRANT SELECT ON system.columns
+TO grafana_reader;
+
+GRANT SELECT ON system.databases
+TO grafana_reader;
+
+GRANT SELECT ON system.tables
+TO grafana_reader;
+
+GRANT INSERT ON observability.ai_updates
+TO vector_ingest;
+
+GRANT INSERT ON observability.syslog
+TO vector_ingest;

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AI Results Validation Gate Every Minute
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=1min
+AccuracySec=5s
+Persistent=true
+Unit=ai-results-gate.service
+
+[Install]
+WantedBy=timers.target
