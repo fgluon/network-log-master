@@ -1,6 +1,41 @@
 # Project Journal
 
-This file is append-only. It records important engineering checkpoints, architectural decisions, and migration boundaries. Detailed implementation evidence belongs in commits, tests, and component documentation.
+This file is append-only. It records important engineering checkpoints, architectural decisions, migration boundaries, and recovery context. Detailed implementation evidence belongs in commits, tests, component documentation, and rebuild status files.
+
+## Journal operating rules
+
+The journal is historical context, not the execution queue.
+
+Authoritative roles:
+
+- `docs/ARCHITECTURE.md` describes the intended system architecture and ownership boundaries.
+- `docs/CURRENT_STATE.md` describes the present implementation state and is the authority for execution order and the single next action.
+- `components/<component>/REBUILD_STATUS.md` contains detailed component-specific rebuild and validation state.
+- `docs/PROJECT_JOURNAL.md` explains what happened, why decisions were made, what failed, and how the project reached the current state.
+
+Each substantial work-session entry should record, when applicable:
+
+- local timestamp including timezone
+- goal of the session or checkpoint
+- starting branch and commit
+- affected components or files
+- work completed
+- validation evidence and important PASS/FAIL results
+- architectural or operational decisions
+- failed approaches or corrections worth remembering
+- known risks, constraints, and intentionally deferred work
+- resulting Git commit and whether the remote was verified
+- worktree state at the checkpoint
+- the explicit next action
+
+Additional rules:
+
+- Do not silently rewrite history when an earlier assumption is later found to be wrong. Append a new entry that supersedes or corrects the earlier entry.
+- Do not use the journal as a substitute for `CURRENT_STATE.md`. Execution order must remain explicit in `CURRENT_STATE.md`.
+- Do not record secrets, credentials, private keys, production addresses, customer-identifying logs, private operator identities, or restricted historical branding.
+- Failed experiments should be recorded when repeating them would waste time, risk production, or obscure why the current implementation was chosen. Routine command noise should not be preserved.
+- At milestone checkpoints, record the commit SHA and whether the remote branch was verified to match it.
+- Before beginning work after a context reset, read `ARCHITECTURE.md`, `CURRENT_STATE.md`, the relevant component `REBUILD_STATUS.md`, the latest journal entries, then verify `git log` and `git status` before changing anything.
 
 ## 2026-08-19 - Master repository established
 
@@ -122,3 +157,104 @@ Implementation was deliberately paused at this point for design discussion.
 - Full normalizer suite reached 73 passing tests.
 - No production collector or GX10 service path was changed.
 - Next gate is production integration and rollback design.
+
+## 2026-08-21 01:58 PDT - Collector rebuild capture checkpoint published
+
+### Goal
+
+Create a durable public recovery point before continuing deeper clean-machine integration work so the collector does not need to be rediscovered if conversational context is lost.
+
+### Starting point
+
+- Branch: `main`
+- Previous public milestone: normalizer replay/parity complete at `4220f50474d608fd8745b4465398af521d7625bd`
+- Collector rebuild artifacts were present locally but had not yet been published.
+
+### Work completed
+
+Captured and published the current collector reconstruction artifacts for:
+
+- package versions and package verification
+- configuration rendering
+- Vector syslog ingestion, ClickHouse sinks, AI-result ingestion, and durable GX10 spool output
+- ClickHouse database objects, service accounts, grants, and settings profile
+- Grafana ClickHouse datasources
+- Grafana HTTPS configuration and TLS file contract
+- Certbot renewal service, timer, and deploy hook
+- restricted SFTP transport boundary, chroots, ACLs, and bind mounts
+- AI-result validation gate
+- spool-retention behavior
+- independent collector runtime verification
+- four Grafana 13 dashboard resources
+- Grafana dashboard restore and verification scripts
+- component recovery document at `components/collector/REBUILD_STATUS.md`
+
+### Validation evidence
+
+Important completed validation gates include:
+
+- `COLLECTOR_PACKAGE_VERIFY=PASS`
+- `TRANSPORT_VERIFY=PASS`
+- `RETENTION_SCRIPT_CONTRACT=PASS`
+- `RETENTION_RUNTIME_CONTRACT=PASS`
+- `CLICKHOUSE_OBJECT_CONTRACT=PASS`
+- `CLICKHOUSE_COLUMN_CONTRACT=PASS`
+- `CLICKHOUSE_USER_POLICY=PASS`
+- `CLICKHOUSE_GRANT_CONTRACT=PASS`
+- `CLICKHOUSE_LOOPBACK_LISTENERS=PASS`
+- `VECTOR_CRITICAL_CONFIG_PARITY=PASS`
+- `VECTOR_SYSLOG_LISTENERS=PASS`
+- `GRAFANA_HTTPS_OVERRIDE=PASS`
+- `GRAFANA_HTTPS_HEALTH=PASS`
+- `GRAFANA_DATASOURCE_CONTRACT=PASS`
+- `CERTBOT_RUNTIME_CONTRACT=PASS`
+- `COLLECTOR_RUNTIME_VERIFY=PASS`
+- `GRAFANA_UNIFIED_RESOURCE_ROUND_TRIP=PASS`
+- `GRAFANA_DRYRUN_RESTORE_PROOF=PASS`
+- `GRAFANA_DASHBOARD_VERIFY=PASS`
+- `GRAFANA_DASHBOARD_RESTORE_DRYRUN=PASS`
+- `GRAFANA_DASHBOARD_LIVE_NONDESTRUCTIVE_TEST=PASS`
+
+Grafana 13.1.1 was also verified to support secure administrator reset using `grafana cli admin reset-admin-password --password-from-stdin`.
+
+### Decisions and constraints
+
+- Do not execute `components/collector/install/install-runtime.sh` against the working collector. It is a clean-machine installer with an explicit clean-install guard.
+- Preserve the current working Vector and Grafana behavior rather than changing configuration merely because it looks unusual.
+- Public rebuild artifacts use neutral service names when live historical names contain private identity.
+- Firewall/nftables reconstruction remains intentionally out of scope. Public documentation should state required network prerequisites without publishing deployment-specific firewall policy.
+- Grafana dashboards are restored through the supported `dashboard.grafana.app/v2` API rather than by writing directly to Grafana SQLite state.
+- Credentials, addresses, SSH keys, TLS private keys, and private environment identity remain operator-supplied and outside the public repository.
+
+### Failed approaches worth remembering
+
+- Early Grafana bootstrap audit commands incorrectly assumed `grafana` or `grafana-cli` was on `PATH`. The package service actually uses `/usr/share/grafana/bin/grafana`.
+- One diagnostic contained a bare interactive-shell `exit 1` and could terminate the SSH session. Subsequent potentially failing command sequences must run inside a child shell.
+- Grafana runtime wiring patch attempts were aborted because of an ambiguous text anchor and a heredoc delimiter collision. Those attempts failed before replacing `install-runtime.sh`; the published checkpoint intentionally records the Grafana runtime integration as unfinished.
+
+### Git checkpoint
+
+- Collector checkpoint commit: `e8df224`
+- Commit message: `Checkpoint collector rebuild capture`
+- 39 collector files were committed.
+- `origin/main` was explicitly verified to match the local checkpoint commit.
+- Worktree was clean after publication.
+
+### Known incomplete work
+
+Collector:
+
+1. Wire `GRAFANA_ADMIN_PASSWORD_FILE` into `install-runtime.sh`.
+2. Implement loopback-only first Grafana startup and secure administrator reset with `--password-from-stdin`.
+3. Wire `restore-dashboards.py` and `verify-dashboards.py` into the clean-machine runtime installer.
+4. Add package-install no-autostart protection before first configuration.
+5. Re-run structural, runtime-contract, and public-safety checks.
+6. Finish collector README/operator rebuild documentation.
+7. Run final collector sanitation and milestone publication.
+8. Perform a clean-machine end-to-end rebuild validation when practical.
+
+GX10 remains the next major component milestone after the collector is closed.
+
+### Next action
+
+Refresh `docs/CURRENT_STATE.md` so it contains a strict numbered execution order with exactly one item marked `NEXT`. Then resume collector Grafana clean-machine integration from the published `e8df224` checkpoint. Do not begin GX10 capture until the collector milestone execution order is explicitly advanced or intentionally reprioritized in `CURRENT_STATE.md`.
