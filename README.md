@@ -2,7 +2,7 @@
 
 A capture-first network observability and local-AI incident reasoning platform.
 
-This repository is the master engineering record for the project. It documents architecture, data contracts, operational boundaries, current state, roadmap, and component ownership. Component code will be consolidated here in a controlled manner as live implementations are synchronized and verified.
+This repository is the master engineering record and active development home for the project. It documents architecture, data contracts, operational boundaries, current state, roadmap, and component ownership. The deterministic normalizer has been consolidated here with its Git history preserved; remaining live components will move here only after their current implementations are reconciled and verified.
 
 ## Core design
 
@@ -61,13 +61,15 @@ Collector / ClickHouse / Grafana
 - [`docs/PROJECT_JOURNAL.md`](docs/PROJECT_JOURNAL.md) - append-only engineering history.
 - [`docs/AI_HANDOFF.md`](docs/AI_HANDOFF.md) - concise instructions for resuming work in a new AI session.
 - [`SECURITY.md`](SECURITY.md) - public-repository publication rules.
-- [`components/`](components/) - component-specific ownership and migration notes.
+- [`components/normalizer/`](components/normalizer/) - active deterministic normalizer source and tests.
+- [`components/collector/`](components/collector/) - collector ownership and migration notes.
+- [`components/gx10/`](components/gx10/) - GX10 ownership and migration notes.
 
 ## Source-of-truth policy
 
-This repository is the durable project control plane, but production changes must still be verified against the live system and the current checked-out code before modification. If documentation and a live implementation disagree, stop and reconcile the difference instead of guessing.
+This repository is the durable project control plane and active source repository for components already consolidated here. Production changes must still be verified against the live system and current deployed configuration before modification. If documentation, repository code, and a live implementation disagree, stop and reconcile the difference instead of guessing.
 
-Historical documents are reference material only. Current verified state and current code take precedence.
+Historical documents and retired standalone component repositories are reference material only. Current verified state and current master-repository code take precedence.
 
 ## Public-repository posture
 
