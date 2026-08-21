@@ -4,6 +4,18 @@
 
 The platform turns raw network telemetry into durable observations, deterministic normalized events, long-lived incident state, and concise local-AI explanations without allowing the LLM to become the source of truth for identity or lifecycle.
 
+The architecture is intentionally split across two roles: a durable collector/log server and a replaceable local-inference host named GX10.
+
+## Rebuildability contract
+
+The current reconstruction/documentation effort is complete only when:
+
+> Two clean servers, this public repository, and operator-supplied environment values are sufficient for another engineer or AI to reconstruct the current functional system without undocumented implementation memory.
+
+The public repository therefore owns implementation logic, non-sensitive configuration, rebuild scripts, verifiers, data contracts, and operator instructions. Environment-specific identity and secrets remain operator-supplied at rebuild time.
+
+This rebuildability contract does not require publishing production addresses, credentials, usernames, SSH keys, certificate private keys, firewall allowlists, customer-identifying data, or other private deployment identity.
+
 ## Component ownership
 
 ### Collector / log server
@@ -17,40 +29,48 @@ Owns:
 - Grafana presentation
 - unknown-event inventory
 - validation and storage of AI results
+- compressed durable backlog for GX10
 - large and long-lived data stores
+- service boundaries that protect durable storage from GX10
 
 ### GX10
 
 Owns:
 
-- receiving prepared observations
-- compact active incident state
-- repeat/burst accounting
-- deterministic correlation
-- rolling incident context
+- receiving/fetching prepared or durable observation backlog
+- compact local working state
+- deterministic incident correlation target
+- repeat/burst accounting target
+- rolling incident context target
 - deciding when the local LLM should run
 - local inference
 - returning thin AI result records
 
-GX10 is intentionally not a raw-log archive, dashboard server, or general infrastructure host.
+GX10 is intentionally not the authoritative raw-log archive, dashboard server, or direct ClickHouse writer.
 
-## Data path
+## Current data path
 
 ```text
 Devices
   -> syslog ingress
   -> Vector
      -> ClickHouse raw store
-     -> compressed AI backlog
+     -> compressed GX10 backlog
 
-Prepared observations
-  -> GX10 deterministic incident engine
-  -> local LLM when warranted
-  -> validated AI result files
-  -> collector validation gate
-  -> ClickHouse AI results
+GX10
+  -> restricted read-only backlog fetch
+  -> local durable replay-safe ingest
+  -> deterministic enrichment/current working logic
+  -> local inference when invoked
+  -> write-only AI result return
+
+Collector
+  -> AI result validation gate
+  -> ClickHouse validated AI updates
   -> Grafana
 ```
+
+The target architecture additionally moves deterministic vendor/event normalization onto the collector before GX10 correlation. That normalizer has passed replay/parity but has not yet been cut into the production collector path.
 
 ## Capture-first contract
 
@@ -66,7 +86,7 @@ Collector arrival time is authoritative for event ordering. A device-supplied ti
 
 ## Incident model
 
-Syslog records are observations. Incidents are persistent objects created and updated by deterministic logic.
+Syslog records are observations. Incidents are persistent deterministic objects assembled from observations.
 
 Target lifecycle:
 
@@ -76,9 +96,11 @@ CANDIDATE -> OPEN -> RECOVERING -> RESOLVED
 
 The LLM may summarize or explain an incident but does not decide canonical identity, deduplication, or lifecycle state.
 
+The long-lived incident engine is a future implementation milestone. Rebuild capture of the currently functional GX10 precedes new incident-engine work.
+
 ## Context model
 
-The incident engine should build deterministic compact summaries over approximately:
+The target incident engine should build deterministic compact summaries over approximately:
 
 - 60 minutes
 - 180 minutes
@@ -88,7 +110,7 @@ Open incidents persist until resolved. Compact resolved history may remain avail
 
 ## LLM wake policy
 
-Normal reasoning runs should be event-driven and rate-limited rather than invoked for every record. Approximate target behavior:
+Target reasoning runs are event-driven and rate-limited rather than invoked for every record. Approximate intended behavior:
 
 - periodic analysis when meaningful new evidence exists
 - immediate wake for major/critical conditions
@@ -105,7 +127,21 @@ Input and output transport credentials are independent and least-privilege.
 - AI result writer: write-only
 - AI results: validated before durable ingestion
 - GX10: no direct ClickHouse write path
+- ClickHouse application listeners: collector-local boundary
+- Grafana/collector rebuild secrets: operator-supplied, never embedded in public artifacts
+
+## Dashboard restoration boundary
+
+Grafana dashboard state is reconstructed through the supported Grafana resource API rather than by writing directly to Grafana's SQLite database.
+
+Current captured dashboards use `dashboard.grafana.app/v2`. The rebuild path preserves captured dashboard `spec` content while allowing Grafana to generate server-owned metadata.
 
 ## Production migration rule
 
-New deterministic parsing logic is built beside the current production path first. It is promoted only after fixture, replay, parity, and idempotency checks. Transitional logic is retired deliberately rather than rewritten in-place without comparison.
+New deterministic parsing or correlation logic is built beside the current production path first. It is promoted only after fixtures, negative-path tests, replay, parity, idempotency, and explicit rollback planning are satisfactory.
+
+Transitional logic is retired deliberately rather than rewritten in place without comparison.
+
+## Reconstruction rule
+
+Before adding new architecture to a component, first capture enough of the currently functional implementation that a clean machine can reproduce it from this repository plus operator-supplied environment values. This prevents modernization work from destroying the only known working implementation history.
