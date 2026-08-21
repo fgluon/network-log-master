@@ -60,3 +60,18 @@ Implementation was deliberately paused at this point for design discussion.
 - Added a public publication checklist for secrets, restricted terms, fixtures, tests, diffs, and migration provenance.
 - Expanded the master README so these documents are discoverable from the repository front page.
 - No production path was changed as part of this documentation pass.
+
+## 2026-08-20 - Normalizer source consolidated into master repository
+
+- Reconciled the live normalizer checkout with its standalone public repository at `f95db38`.
+- Re-ran the public-repository sanitation gate successfully.
+- Re-ran the full normalizer suite with 58 tests passing.
+- Published the 14 previously local reviewed commits to the standalone repository to preserve provenance.
+- Imported the standalone normalizer history into `components/normalizer/` using a Git subtree merge.
+- Master import commit `8d55320` retains `f95db38` as a parent and records the subtree split SHA.
+- Verified the imported package resolves from the master-repository path rather than the old checkout.
+- Re-ran all 58 tests from the imported master-repository component successfully.
+- Published the history-preserving import to the master repository.
+- Declared `components/normalizer/` in the master repository the active development source for future normalizer work.
+- The standalone normalizer repository is now historical/migration reference only.
+- No production collector or GX10 service behavior changed during this consolidation.
