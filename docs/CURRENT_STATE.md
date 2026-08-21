@@ -1,6 +1,6 @@
 # Current State
 
-Last verified checkpoint: 2026-08-19.
+Last verified checkpoint: 2026-08-20.
 
 ## Platform
 
@@ -35,9 +35,9 @@ Not yet complete:
 - deterministic rolling context summaries
 - production LLM wake/orchestration logic
 
-## Normalizer checkpoint
+## Normalizer consolidation checkpoint
 
-Current verified live development tree:
+The standalone normalizer repository and live development checkout were reconciled at:
 
 ```text
 f95db38 Enable NX-OS ETHPORT parser in default registry
@@ -45,19 +45,33 @@ f95db38 Enable NX-OS ETHPORT parser in default registry
 clean working tree
 ```
 
+The verified normalizer history was then imported into this master repository under `components/normalizer/` using a history-preserving Git subtree merge.
+
+Master import commit:
+
+```text
+8d55320 Import normalizer component history
+```
+
+The import commit retains `f95db38` as a parent and records the subtree split SHA in the commit metadata. The imported package was tested from its new master-repository path in an isolated virtual environment:
+
+```text
+58 passed
+```
+
+The master repository is now the active development source for the normalizer. The old standalone normalizer repository is retained only as historical/migration reference and should not receive new feature development.
+
 Implemented deterministic parser coverage:
 
 - Arista EOS BGP adjacency changes
 - Cisco IOS XR BGP adjacency changes
 - Cisco NX-OS ETHPORT interface state changes
 
-Generic event envelope extraction and platform-hint trust boundaries are also implemented.
-
-The live development checkout is authoritative when it is ahead of the previously published normalizer repository. Synchronize deliberately before consolidating the code into this master repository.
+Generic event envelope extraction, platform-hint trust boundaries, capture-first behavior, and fail-open parser dispatch are also implemented.
 
 ## Pinned OSPF checkpoint
 
-Research is complete enough to begin the next parser, but implementation is intentionally paused.
+Research is complete enough to begin the next parser. Implementation can now resume in `components/normalizer/` inside this master repository.
 
 Verified generic normalization behavior:
 
@@ -77,19 +91,20 @@ OSPFV3-5-NBR_RETRANSMISSIONS
   signal_type  = observation
 ```
 
-Important design finding: OSPF and OSPFv3 are already distinct generic event families. The future NX-OS parser should preserve that distinction.
+Important design finding: OSPF and OSPFv3 are already distinct generic event families. The future NX-OS parser must preserve that distinction.
 
 Observed production message families also include Arista OSPF/OSPFv3 adjacency events and Cisco IOS XR OSPF/OSPFv3 adjacency events. Those must not be accidentally consumed by the NX-OS parser; they require separate platform-specific parsers.
 
 ## Immediate resume point
 
-When normalizer work resumes:
-
-1. implement the isolated Cisco NX-OS OSPF/OSPFv3 retransmission parser
-2. preserve the platform trust boundary
-3. use synthetic documentation-range addresses in tests
-4. prove malformed/future layouts stay capture-first generic
-5. prove cross-platform events cannot enter the NX-OS parser
-6. run the complete test suite before registering the parser in the default registry
+1. work only from `components/normalizer/` in the master repository
+2. implement the isolated Cisco NX-OS OSPF/OSPFv3 retransmission parser
+3. preserve the Cisco/NX-OS platform trust boundary
+4. use synthetic documentation-range addresses in tests
+5. require enough parsed identity to avoid ambiguous incident keys
+6. prove malformed/future layouts stay capture-first generic
+7. prove cross-platform events cannot enter the NX-OS parser
+8. run the complete test suite before registering the parser in the default registry
+9. replay and compare against the transitional GX10 classifier before any production cutover
 
 Do not modify the production path until replay/parity testing proves the new normalizer behavior.
