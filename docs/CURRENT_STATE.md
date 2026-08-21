@@ -16,7 +16,7 @@ Verified capabilities:
 - ClickHouse retains raw syslog observations.
 - Grafana reads from a semantic log view rather than forcing display-specific fields into the raw table.
 - A validated AI result ingestion path writes accepted result records into ClickHouse.
-- The Python network log normalizer is under active development beside production and is not yet wired into the production path.
+- The Python network log normalizer is developed in this master repository but is not yet wired into the production path.
 
 ## GX10
 
@@ -35,76 +35,83 @@ Not yet complete:
 - deterministic rolling context summaries
 - production LLM wake/orchestration logic
 
-## Normalizer consolidation checkpoint
+## Normalizer repository checkpoint
 
-The standalone normalizer repository and live development checkout were reconciled at:
+The normalizer is now developed from `components/normalizer/` in this master repository. Its standalone history was preserved during consolidation.
 
-```text
-f95db38 Enable NX-OS ETHPORT parser in default registry
-58 tests passing
-clean working tree
-```
-
-The verified normalizer history was then imported into this master repository under `components/normalizer/` using a history-preserving Git subtree merge.
-
-Master import commit:
+History-preserving import checkpoint:
 
 ```text
 8d55320 Import normalizer component history
 ```
 
-The import commit retains `f95db38` as a parent and records the subtree split SHA in the commit metadata. The imported package was tested from its new master-repository path in an isolated virtual environment:
+The public-repository gate was repaired for the monorepo layout without weakening the private deny list:
 
 ```text
-58 passed
+18ec113 Fix public repo gate for monorepo layout
 ```
 
-The master repository is now the active development source for the normalizer. The old standalone normalizer repository is retained only as historical/migration reference and should not receive new feature development.
+Current verified normalizer feature checkpoint:
 
-Implemented deterministic parser coverage:
+```text
+7f7f592 Add Cisco NX-OS OSPF retransmission parser
+81a3812 Enable NX-OS OSPF parser in default registry
+70 tests passing
+public repository gate passing
+5 local forbidden terms loaded
+clean working tree before publication
+```
+
+Implemented deterministic parser coverage now includes:
 
 - Arista EOS BGP adjacency changes
 - Cisco IOS XR BGP adjacency changes
 - Cisco NX-OS ETHPORT interface state changes
+- Cisco NX-OS OSPF neighbor retransmission degradation
+- Cisco NX-OS OSPFv3 neighbor retransmission degradation
 
 Generic event envelope extraction, platform-hint trust boundaries, capture-first behavior, and fail-open parser dispatch are also implemented.
 
-## Pinned OSPF checkpoint
+## NX-OS OSPF/OSPFv3 checkpoint
 
-Research is complete enough to begin the next parser. Implementation can now resume in `components/normalizer/` inside this master repository.
+The previously pinned parser task is complete and registered in the default parser registry.
 
-Verified generic normalization behavior:
+Supported event codes:
 
 ```text
 OSPF-5-NBR_RETRANSMISSIONS
-  event_family = ospf
-  vendor       = cisco
-  os_family    = nxos
-  protocol     = ""
-  signal_type  = observation
-
 OSPFV3-5-NBR_RETRANSMISSIONS
-  event_family = ospfv3
-  vendor       = cisco
-  os_family    = nxos
-  protocol     = ""
-  signal_type  = observation
 ```
 
-Important design finding: OSPF and OSPFv3 are already distinct generic event families. The future NX-OS parser must preserve that distinction.
+Deterministic enrichment contract:
 
-Observed production message families also include Arista OSPF/OSPFv3 adjacency events and Cisco IOS XR OSPF/OSPFv3 adjacency events. Those must not be accidentally consumed by the NX-OS parser; they require separate platform-specific parsers.
+```text
+protocol      = ospf
+signal_type   = degradation
+entity_type   = ospf_neighbor
+state         = retransmissions
+entity_key    = OSPF|device|process|neighbor
+```
 
-## Immediate resume point
+The parser preserves `event_family = ospf` versus `event_family = ospfv3` and requires the process identity to agree with the event code (`ospf-N` for OSPF and `ospfv3-N` for OSPFv3).
 
-1. work only from `components/normalizer/` in the master repository
-2. implement the isolated Cisco NX-OS OSPF/OSPFv3 retransmission parser
-3. preserve the Cisco/NX-OS platform trust boundary
-4. use synthetic documentation-range addresses in tests
-5. require enough parsed identity to avoid ambiguous incident keys
-6. prove malformed/future layouts stay capture-first generic
-7. prove cross-platform events cannot enter the NX-OS parser
-8. run the complete test suite before registering the parser in the default registry
-9. replay and compare against the transitional GX10 classifier before any production cutover
+Malformed layouts, missing identity, unsupported event codes, and non-NX-OS platform hints stay on the generic capture-first path. Synthetic tests cover IPv4, IPv6, hostname/source fallback, future layouts, event-code/process mismatch, Cisco IOS XR rejection, and Arista EOS rejection.
 
-Do not modify the production path until replay/parity testing proves the new normalizer behavior.
+The collector implementation intentionally improves on the transitional GX10 classifier by preserving OSPFv3 process identity rather than collapsing it to an unknown process.
+
+## Immediate resume point - replay and parity
+
+Do not add another parser merely to increase coverage. The next engineering gate is to prove the current collector-side normalizer against stored observations and the transitional GX10 enrichment path.
+
+Next sequence:
+
+1. inventory the existing replay/sample tooling and stored observation sources without modifying production
+2. build or adapt a deterministic replay harness for the selected migration scope
+3. replay representative EOS BGP, IOS XR BGP, NX-OS ETHPORT, NX-OS OSPF, and NX-OS OSPFv3 observations
+4. compare event family, vendor/platform, protocol, signal type, entity type/key, state, and structured attributes against transitional GX10 enrichment
+5. record intentional differences, especially corrected OSPFv3 process identity
+6. verify malformed/unknown observations remain visible and replayable
+7. verify repeated replay is deterministic and idempotent
+8. only after parity is understood, design the production collector integration/cutover
+
+Do not modify the production path until this replay/parity gate is complete.
