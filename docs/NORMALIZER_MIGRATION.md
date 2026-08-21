@@ -13,6 +13,8 @@ This is a controlled migration, not a rewrite-in-place.
 3. this repository's current-state and component documentation
 4. older planning documents
 
+`docs/CURRENT_STATE.md` controls whether migration work is currently active. This document defines migration gates; it does not override the project's current execution order.
+
 ## Repository consolidation status
 
 The source-code consolidation step is complete.
@@ -60,7 +62,7 @@ The transitional GX10 enrichment path remains operational and is useful for comp
 - signal type
 - structured attributes
 
-It must not be removed until collector-side fixtures and replay establish equivalent or intentionally improved behavior.
+It must not be removed until collector-side fixtures, replay, and controlled production integration establish equivalent or intentionally improved behavior.
 
 ## Platform trust during replay and production
 
@@ -118,6 +120,7 @@ Do not wire the collector-side normalizer into the production ingest/handoff pat
 - parity differences are understood
 - unknown events remain visible and attention-eligible
 - raw messages remain replayable
+- production integration observability is defined
 - rollback is straightforward
 
 After cutover proves stable, retire duplicate vendor parsing on GX10 deliberately.
@@ -134,4 +137,10 @@ The IOS XR reason/detail difference was confirmed as representation-only and did
 
 Sanitized repeated replay is deterministic and the full normalizer suite passes 73 tests.
 
-This milestone does not authorize production cutover. Production integration, observability, validation, and rollback must be designed and reviewed next.
+This milestone does not authorize production cutover.
+
+## Current project priority
+
+Production normalizer integration is intentionally deferred while the project first captures enough of the currently functional collector and GX10 implementation to satisfy the clean two-server rebuild acceptance criterion.
+
+After collector and GX10 rebuild milestones are closed, `docs/CURRENT_STATE.md` may advance production integration/rollback design to the active `NEXT` item. Until then, do not treat this migration document's cutover gate as the current execution queue.
