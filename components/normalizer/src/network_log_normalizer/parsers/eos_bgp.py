@@ -28,6 +28,12 @@ VRF_RE = re.compile(
     re.IGNORECASE,
 )
 
+VRF_AS_RE = re.compile(
+    r"\bVRF\s+(?P<vrf>[A-Za-z0-9_.:-]+)"
+    r"\s+AS\s+(?P<peer_as>\d+)\b",
+    re.IGNORECASE,
+)
+
 
 class EosBgpAdjchangeParser:
     """
@@ -65,12 +71,19 @@ class EosBgpAdjchangeParser:
         old_state = state_match.group("old_state")
         new_state = state_match.group("new_state")
 
-        vrf_match = VRF_RE.search(event.message)
-        vrf = (
-            vrf_match.group("vrf")
-            if vrf_match is not None
-            else "default"
-        )
+        vrf_as_match = VRF_AS_RE.search(event.message)
+
+        if vrf_as_match is not None:
+            vrf = vrf_as_match.group("vrf")
+            peer_as = vrf_as_match.group("peer_as")
+        else:
+            vrf_match = VRF_RE.search(event.message)
+            vrf = (
+                vrf_match.group("vrf")
+                if vrf_match is not None
+                else "default"
+            )
+            peer_as = ""
 
         event_match = EVENT_RE.search(event.message)
         trigger = (
@@ -113,5 +126,6 @@ class EosBgpAdjchangeParser:
                 "old_state": old_state,
                 "new_state": new_state,
                 "trigger_event": trigger,
+                **({"peer_as": peer_as} if peer_as else {}),
             },
         )

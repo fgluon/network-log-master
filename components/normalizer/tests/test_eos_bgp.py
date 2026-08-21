@@ -40,6 +40,33 @@ def test_eos_bgp_established_to_idle_is_down():
     assert event.attributes["trigger_event"] == "AdminReset"
 
 
+def test_eos_bgp_vrf_as_is_preserved():
+    event = normalize_record(
+        {
+            "hostname": "router-example",
+            "vendor_hint": "Arista Networks",
+            "os_family_hint": "Arista EOS",
+            "message": (
+                "%BGP-5-ADJCHANGE: "
+                "peer 192.0.2.10 "
+                "(VRF default AS 64512) "
+                "old state Established "
+                "event AdminReset "
+                "new state Idle"
+            ),
+        },
+        parsers=[PARSER],
+    )
+
+    assert event.protocol == "bgp"
+    assert event.attributes["vrf"] == "default"
+    assert event.attributes["peer_as"] == "64512"
+    assert (
+        event.entity_key
+        == "BGP|router-example|default|192.0.2.10"
+    )
+
+
 def test_eos_bgp_openconfirm_to_established_is_recovery():
     event = normalize_record(
         {

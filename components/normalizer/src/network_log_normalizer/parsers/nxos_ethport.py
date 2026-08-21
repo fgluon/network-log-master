@@ -108,6 +108,7 @@ class NxosEthportStateParser:
             vendor="cisco",
             os_family="nxos",
             event_family="ethport",
+            protocol="ethernet",
             signal_type=signal_type,
             entity_type="interface",
             entity_key=entity_key,

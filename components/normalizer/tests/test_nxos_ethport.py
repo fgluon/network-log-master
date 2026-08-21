@@ -25,6 +25,7 @@ def test_nxos_ethport_link_failure_is_down_transition():
     assert event.vendor == "cisco"
     assert event.os_family == "nxos"
     assert event.event_family == "ethport"
+    assert event.protocol == "ethernet"
     assert event.signal_type == "state_transition"
     assert event.state == "down"
     assert event.entity_type == "interface"
@@ -51,6 +52,7 @@ def test_nxos_ethport_up_is_recovery():
         parsers=[PARSER],
     )
 
+    assert event.protocol == "ethernet"
     assert event.signal_type == "recovery"
     assert event.state == "up"
     assert (
