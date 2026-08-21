@@ -42,6 +42,8 @@ Implemented collector-side parser coverage:
 - Arista EOS BGP adjacency changes
 - Cisco IOS XR BGP adjacency changes
 - Cisco NX-OS ETHPORT interface state changes
+- Cisco NX-OS OSPF neighbor retransmission degradation
+- Cisco NX-OS OSPFv3 neighbor retransmission degradation
 
 The framework also includes generic capture-first normalization, event-envelope extraction, explicit platform hints/trust boundaries, and fail-open parser dispatch.
 
@@ -60,18 +62,36 @@ The transitional GX10 enrichment path remains operational and is useful for comp
 
 It must not be removed until collector-side fixtures and replay establish equivalent or intentionally improved behavior.
 
+## Platform trust during replay and production
+
+Stored-observation replay established that platform-specific parsing requires an external trust decision.
+
+The migration contract is:
+
+- use a private operator-maintained platform inventory keyed by the deployment's stable syslog `source_ip` identity
+- inject trusted `vendor_hint` and `os_family_hint` before vendor-specific normalization
+- do not treat Vector fallback parser labels as vendor/platform identity
+- do not infer runtime platform authority solely from message fingerprints
+- fingerprints may bootstrap or audit the private inventory
+- unmapped sources remain generic observations
+- private device identities and the inventory itself remain outside the public repository
+
+This keeps platform identity separate from message decoding and preserves capture-first behavior when inventory coverage is incomplete.
+
 ## Known intentional improvement
 
-For Cisco NX-OS OSPF retransmission evidence, the transitional process extraction recognizes normal `ospf-N` process names but does not fully preserve `ospfv3-N` process identity.
+Measured live GX10 v3 behavior for the reviewed Cisco NX-OS OSPFv3 retransmission observations is generic: those events do not enter its OSPF retransmission classification branch and receive no OSPF entity key.
 
-The collector-side implementation should preserve the generic distinction already proven by the current envelope layer:
+The collector-side implementation intentionally improves this behavior while preserving:
 
 ```text
 OSPF   -> event_family ospf
 OSPFv3 -> event_family ospfv3
 ```
 
-Correcting the OSPFv3 process identity is an intentional parity difference and should be covered by tests.
+Real stored-observation replay has verified collector-side OSPFv3 neighbor degradation classification with `ospfv3-N` process identity.
+
+This is an intentional parity difference, not a requirement to reproduce the transitional limitation.
 
 ## Migration gates for each parser
 

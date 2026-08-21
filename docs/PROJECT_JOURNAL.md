@@ -92,3 +92,20 @@ Implementation was deliberately paused at this point for design discussion.
 - Published the parser and registry commits to the master repository.
 - No production collector or GX10 path was changed.
 - Next gate is replay/parity against stored observations and transitional GX10 enrichment, not additional parser breadth by default.
+
+## 2026-08-20 - Platform resolution and first real replay proof
+
+- Inspected live collector Vector parsing behavior and established that fallback parser labels describe syslog envelope parsing rather than trustworthy device platform identity.
+- Established a private platform-resolution contract based on the deployment's stable syslog `source_ip` identity.
+- Used deliberately narrow production-observed message fingerprints only to bootstrap and audit the private inventory.
+- Kept the runtime trust path independent of message fingerprints.
+- Preserved fail-closed behavior: sources absent from the private inventory remain generic capture-first observations.
+- Kept production source identities, hostnames, and the private inventory outside the public repository.
+- Replay exposed an initial inventory-evidence gap for NX-OS OSPF retransmission events.
+- Added the already-supported narrow OSPF/OSPFv3 retransmission grammar to the private bootstrap evidence rather than creating a one-off source exception.
+- The revised private evidence set introduced no reviewed cross-platform conflicts.
+- Replayed three real stored NX-OS OSPF and three real stored NX-OS OSPFv3 retransmission observations through trusted platform resolution and the collector-side normalizer.
+- All six passed the semantic gate for vendor, OS family, event family, protocol, signal type, entity type, state, entity-key presence, process identity, and neighbor presence.
+- Verified that transitional GX10 v3 leaves the reviewed OSPFv3 retransmission observations generic, while the collector-side parser intentionally recognizes them as OSPFv3 neighbor degradation.
+- No production collector path was changed.
+- Next gate is broader replay/parity for EOS BGP, IOS XR BGP, and NX-OS ETHPORT before production integration design.

@@ -97,21 +97,73 @@ The parser preserves `event_family = ospf` versus `event_family = ospfv3` and re
 
 Malformed layouts, missing identity, unsupported event codes, and non-NX-OS platform hints stay on the generic capture-first path. Synthetic tests cover IPv4, IPv6, hostname/source fallback, future layouts, event-code/process mismatch, Cisco IOS XR rejection, and Arista EOS rejection.
 
-The collector implementation intentionally improves on the transitional GX10 classifier by preserving OSPFv3 process identity rather than collapsing it to an unknown process.
+Measured replay against the live transitional GX10 classifier established a stronger difference: transitional GX10 v3 leaves the reviewed OSPFv3 retransmission events on the generic observation path with no OSPF entity key. The collector-side parser intentionally classifies them as `ospfv3` neighbor degradation and preserves the `ospfv3-N` process identity.
 
-## Immediate resume point - replay and parity
+## Platform-resolution and first replay checkpoint
 
-Do not add another parser merely to increase coverage. The next engineering gate is to prove the current collector-side normalizer against stored observations and the transitional GX10 enrichment path.
+Stored-observation replay exposed an important platform trust boundary before production integration.
 
-Next sequence:
+Verified conclusions:
 
-1. inventory the existing replay/sample tooling and stored observation sources without modifying production
-2. build or adapt a deterministic replay harness for the selected migration scope
-3. replay representative EOS BGP, IOS XR BGP, NX-OS ETHPORT, NX-OS OSPF, and NX-OS OSPFv3 observations
-4. compare event family, vendor/platform, protocol, signal type, entity type/key, state, and structured attributes against transitional GX10 enrichment
-5. record intentional differences, especially corrected OSPFv3 process identity
-6. verify malformed/unknown observations remain visible and replayable
-7. verify repeated replay is deterministic and idempotent
-8. only after parity is understood, design the production collector integration/cutover
+- platform-specific parsers must not infer platform identity from event syntax alone
+- Vector fallback parser labels describe envelope parsing and are not authoritative vendor/platform identity
+- trusted `vendor_hint` and `os_family_hint` values come from a private operator-maintained platform inventory keyed by the deployment's stable syslog `source_ip` identity
+- message fingerprints may bootstrap and audit that private inventory, but are not runtime platform authority
+- sources absent from the private inventory remain `unknown` and stay on the generic capture-first path
+- production source identities and the private inventory remain outside this public repository
 
-Do not modify the production path until this replay/parity gate is complete.
+The private inventory bootstrap was exercised against stored backlog observations without introducing a reviewed cross-platform evidence conflict.
+
+The resulting platform-resolution path was tested against six real stored Cisco NX-OS retransmission observations:
+
+```text
+3 OSPF retransmission observations
+3 OSPFv3 retransmission observations
+6 passed
+0 failed
+```
+
+All six resolved through trusted platform hints and entered the NX-OS parser with:
+
+```text
+vendor        = cisco
+os_family     = nxos
+protocol      = ospf
+signal_type   = degradation
+entity_type   = ospf_neighbor
+state         = retransmissions
+entity_key    = present
+```
+
+OSPF records preserved `event_family = ospf` and `ospf-N` process identity.
+
+OSPFv3 records preserved `event_family = ospfv3` and `ospfv3-N` process identity.
+
+This establishes the first real-observation proof of:
+
+```text
+trusted source identity
+-> private platform inventory
+-> vendor/os hints
+-> deterministic vendor parser
+-> normalized semantic event
+```
+
+No production collector path has been switched to the new normalizer.
+
+## Immediate resume point - broaden replay/parity
+
+Do not add parser breadth merely to increase coverage.
+
+The next engineering gate is to broaden stored-observation replay across the remaining selected migration scope:
+
+1. Arista EOS BGP adjacency
+2. Cisco IOS XR BGP adjacency
+3. Cisco NX-OS ETHPORT state
+4. compare collector-side semantics with transitional GX10 behavior where it provides a meaningful reference
+5. record intentional differences rather than forcing incorrect parity
+6. verify unknown and unmapped observations remain visible, attention-eligible, and replayable
+7. verify repeated replay is deterministic
+8. design production integration and rollback only after the selected replay scope passes
+
+Do not modify the production path until the broader replay/parity gate is complete.

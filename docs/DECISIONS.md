@@ -101,3 +101,21 @@ Why:
 - future AI-assisted sessions can resume from a compact verified record
 
 Consequence: public-safety gates are mandatory, and live system state must still be verified before consequential production changes.
+
+## ADR-008 - Platform selection uses a private trusted inventory
+
+**Status:** Accepted
+
+Vendor/platform eligibility for deterministic parsers is supplied by a private operator-maintained inventory keyed by the deployment's stable syslog `source_ip` identity.
+
+Message fingerprints may be used to bootstrap and audit that inventory, but they are not runtime platform authority.
+
+Why:
+
+- multiple network operating systems can use superficially similar syslog event syntax
+- legacy and partially structured syslog envelopes cannot safely establish vendor identity
+- collector envelope-parser labels describe decoding paths rather than device platform
+- vendor-specific parsers should run only after an independent trust decision
+- unknown inventory entries must remain observable instead of being guessed
+
+Consequence: the collector injects trusted `vendor_hint` and `os_family_hint` before vendor-specific normalization. Unmapped sources remain on the generic capture-first path. Production device identities and the private inventory are never committed to this public repository.

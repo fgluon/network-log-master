@@ -77,23 +77,38 @@ Implemented parser scope now includes:
 
 The NX-OS OSPF parser preserves `ospf` versus `ospfv3`, uses protocol `ospf`, deterministic `OSPF|device|process|neighbor` identity, rejects mismatched process/event-code families, and fails open to the generic observation path on malformed or cross-platform input.
 
-## Current resume point - replay/parity
+## Platform-resolution replay checkpoint
+
+Stored-observation replay established the platform trust boundary required by the vendor parsers.
+
+Current contract:
+
+- runtime parser eligibility comes from trusted `vendor_hint` and `os_family_hint`
+- a private operator-maintained inventory maps the deployment's stable syslog `source_ip` identity to platform
+- Vector envelope-parser labels are not platform authority
+- event-message fingerprints may bootstrap or audit the private inventory but do not become runtime identity
+- unknown and unmapped sources fail closed to generic capture-first normalization
+- the private platform inventory and real device identities are not stored in this public repository
+
+The private inventory was used to replay three real NX-OS OSPF and three real NX-OS OSPFv3 retransmission observations.
+
+All six passed the collector-side semantic gate.
+
+Measured intentional difference: transitional GX10 v3 leaves the reviewed NX-OS OSPFv3 retransmission observations as generic observations with no OSPF entity key. Collector-side normalization intentionally recognizes them as `ospfv3` neighbor degradation events and preserves `ospfv3-N` process identity.
+
+The production normalizer path has not yet been switched over.
+
+## Current resume point - broaden replay/parity
 
 Do not immediately add another parser.
 
-The next task is to inventory and exercise replay/parity against stored observations and the transitional GX10 enrichment path.
+Next replay scope:
 
-Required comparison fields:
-
-- event family
-- vendor/platform
-- protocol
-- signal type
-- entity type
-- entity key
-- state
-- structured attributes
-
-Expected intentional difference: collector-side OSPFv3 parsing preserves the `ospfv3-N` process identity that the transitional GX10 classifier does not fully preserve.
-
-The production normalizer path has not yet been switched over. Do not cut over until replay, parity, unknown-event visibility, and idempotency are proven.
+1. Arista EOS BGP adjacency
+2. Cisco IOS XR BGP adjacency
+3. Cisco NX-OS ETHPORT state
+4. compare semantic output with transitional GX10 behavior where applicable
+5. preserve and document intentional differences
+6. prove unknown-source behavior remains capture-first
+7. prove deterministic repeated replay
+8. design production integration only after the selected replay scope passes
