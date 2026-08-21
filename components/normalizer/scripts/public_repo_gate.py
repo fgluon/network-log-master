@@ -62,7 +62,12 @@ def tracked_files() -> list[str]:
 
 
 def index_content(path: str) -> bytes:
-    return git("show", f":{path}")
+    prefix = (
+        git("rev-parse", "--show-prefix")
+        .decode("utf-8")
+        .strip()
+    )
+    return git("show", f":{prefix}{path}")
 
 
 def local_terms() -> list[str]:
