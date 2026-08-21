@@ -1,188 +1,191 @@
 # Current State
 
-Last verified checkpoint: 2026-08-20.
+Last verified project checkpoint: 2026-08-21.
 
-## Platform
+This file is the authority for current execution order. Exactly one item should be marked `NEXT`.
 
-The production observability path is operational for raw syslog collection, ClickHouse storage, Grafana visualization, compressed backlog creation, secure backlog retrieval by GX10, GX10 ingest, and validated AI-result return to the collector.
+## Project acceptance criterion
 
-The deterministic incident correlator and local-LLM orchestration are not yet production-complete.
+The rebuild/documentation project is complete only when two clean servers, this public repository, and operator-supplied environment values are sufficient for another engineer or AI to reconstruct the current functional system without undocumented implementation memory.
 
-## Collector / log server
+Environment-specific credentials, addresses, usernames, SSH keys, certificate private keys, and similar identity-bearing values are intentionally supplied by the operator during rebuild rather than stored publicly.
 
-Verified capabilities:
+## Platform state
 
-- Vector receives network syslog and fans out to durable storage and a compressed AI backlog.
-- ClickHouse retains raw syslog observations.
-- Grafana reads from a semantic log view rather than forcing display-specific fields into the raw table.
-- A validated AI result ingestion path writes accepted result records into ClickHouse.
-- The Python network log normalizer is developed in this master repository but is not yet wired into the production path.
+The working observability path currently provides:
 
-## GX10
+- network syslog collection through Vector
+- durable raw syslog storage in ClickHouse
+- Grafana visualization over captured ClickHouse data
+- compressed file backlog creation for GX10
+- restricted read-only backlog retrieval by GX10
+- GX10 local durable ingest with replay/idempotency protection
+- transitional deterministic enrichment on GX10
+- write-only AI-result return to the collector
+- collector-side AI-result validation and ClickHouse ingestion
 
-Verified capabilities:
+The long-lived deterministic incident correlator and production local-LLM orchestration are not yet complete.
+
+## Normalizer milestone
+
+Status: `DONE`
+
+The active normalizer source is `components/normalizer/` in this master repository.
+
+Completed replay/parity milestone:
+
+- 24 representative stored observations
+- 21 strict semantic matches
+- 3 intentional NX-OS OSPFv3 differences
+- 0 unexpected differences
+- deterministic replay repeated successfully
+- 73 tests passing
+- public-repository sanitation gate passing
+
+Reference milestone commit:
+
+`4220f50474d608fd8745b4465398af521d7625bd`
+
+The production collector path has not yet been switched to the new normalizer. Production cutover remains a later controlled migration task and is not required to finish the current rebuild-documentation milestone.
+
+## Collector rebuild milestone
+
+Status: `IN PROGRESS`
+
+A durable public collector checkpoint was published at:
+
+`e8df224` — `Checkpoint collector rebuild capture`
+
+The collector checkpoint includes captured and public-safe rebuild artifacts for:
+
+- package versions and package verification
+- configuration rendering
+- Vector ingest, transforms, ClickHouse sinks, AI-result ingestion, and GX10 spool output
+- ClickHouse database objects, users, grants, and settings profile
+- Grafana ClickHouse datasources
+- Grafana HTTPS systemd configuration
+- TLS ownership/mode contract
+- Certbot renewal service, timer, and deploy hook
+- restricted SFTP/chroot transport boundary
+- ACLs and bind mounts
+- AI-result validation gate
+- GX10 spool-retention behavior
+- independent collector runtime verification
+- four Grafana 13 dashboard resources
+- Grafana dashboard restore and verification scripts
+
+Important completed collector validation includes:
+
+- `COLLECTOR_PACKAGE_VERIFY=PASS`
+- `TRANSPORT_VERIFY=PASS`
+- `RETENTION_SCRIPT_CONTRACT=PASS`
+- `RETENTION_RUNTIME_CONTRACT=PASS`
+- `CLICKHOUSE_OBJECT_CONTRACT=PASS`
+- `CLICKHOUSE_COLUMN_CONTRACT=PASS`
+- `CLICKHOUSE_USER_POLICY=PASS`
+- `CLICKHOUSE_GRANT_CONTRACT=PASS`
+- `CLICKHOUSE_LOOPBACK_LISTENERS=PASS`
+- `VECTOR_CRITICAL_CONFIG_PARITY=PASS`
+- `VECTOR_SYSLOG_LISTENERS=PASS`
+- `GRAFANA_HTTPS_OVERRIDE=PASS`
+- `GRAFANA_HTTPS_HEALTH=PASS`
+- `GRAFANA_DATASOURCE_CONTRACT=PASS`
+- `CERTBOT_RUNTIME_CONTRACT=PASS`
+- `COLLECTOR_RUNTIME_VERIFY=PASS`
+
+Detailed component state is in `components/collector/REBUILD_STATUS.md`.
+
+## Grafana dashboard reconstruction
+
+Status: `DONE` for capture/restore mechanism; runtime-installer integration remains open.
+
+Four current dashboards are captured as Grafana 13 `dashboard.grafana.app/v2` resources.
+
+The supported API behavior was proven against Grafana 13.1.1:
+
+- GET round-trip preserves captured dashboard `spec`
+- POST creates a dashboard
+- PUT replaces a dashboard
+- `dryRun=All` validates without persistence
+- dry-run create did not persist
+- dry-run replace did not change live resource versions
+
+Permanent scripts are published under `components/collector/grafana/scripts/`:
+
+- `dashboard_api.py`
+- `restore-dashboards.py`
+- `verify-dashboards.py`
+
+Completed validation:
+
+- `GRAFANA_UNIFIED_RESOURCE_ROUND_TRIP=PASS`
+- `GRAFANA_DRYRUN_RESTORE_PROOF=PASS`
+- `GRAFANA_DASHBOARD_VERIFY=PASS`
+- `GRAFANA_DASHBOARD_RESTORE_DRYRUN=PASS`
+- `GRAFANA_DASHBOARD_LIVE_NONDESTRUCTIVE_TEST=PASS`
+
+Grafana 13.1.1 also supports secure administrator reset through:
+
+`grafana cli admin reset-admin-password --password-from-stdin`
+
+## GX10 state
+
+Status: `NOT STARTED` for complete public rebuild capture.
+
+Verified working capabilities already known from the live system include:
 
 - read-only secure fetch of compressed backlog files
-- local durable ingest with replay/idempotency protection
-- transitional deterministic enrichment used as a parity reference
-- write-only secure return path for AI result files
-- local Ollama runtime available for later reasoning work
+- local durable SQLite ingest
+- replay/idempotency protection
+- transitional deterministic enrichment
+- write-only secure AI-result return
+- local Ollama runtime
 
-Not yet complete:
+Still requiring complete capture/rebuild treatment:
 
-- long-lived deterministic incident objects
-- repeat/burst incident evidence model
-- deterministic rolling context summaries
-- production LLM wake/orchestration logic
+- package/runtime reconstruction
+- NVIDIA/GB10 environment dependencies
+- Ollama/model configuration
+- spool fetcher implementation
+- local SQLite schema and ingest implementation
+- deterministic enrichment/classification implementation
+- systemd service/timer configuration
+- inference integration
+- result-return implementation
+- verification scripts
+- operator rebuild documentation
 
-## Normalizer repository checkpoint
+Long-lived incident correlation and production LLM orchestration remain separate future implementation work beyond reconstruction of the currently functional system.
 
-The normalizer is now developed from `components/normalizer/` in this master repository. Its standalone history was preserved during consolidation.
+## Explicit execution order
 
-History-preserving import checkpoint:
+1. `DONE` — publish durable collector capture checkpoint and recovery status.
+2. `DONE` — prove Grafana 13 dashboard round-trip, create, replace, and non-destructive dry-run restore behavior.
+3. `DONE` — publish permanent Grafana dashboard restore/verification scripts.
+4. `DONE` — establish repository recovery/journal operating rules and canonical startup documentation.
+5. `NEXT` — finish secure Grafana administrator bootstrap wiring in `components/collector/install/install-runtime.sh`, using an operator-supplied password file, loopback-only first startup, and `--password-from-stdin`.
+6. `NOT STARTED` — wire `restore-dashboards.py` and `verify-dashboards.py` into the clean-machine collector runtime installer.
+7. `NOT STARTED` — add package-install no-autostart protection so services cannot transiently expose an unconfigured first-start state.
+8. `NOT STARTED` — re-run collector installer structural, credential-exposure, and public-safety validation.
+9. `NOT STARTED` — finish collector README and operator-facing clean-machine rebuild documentation.
+10. `NOT STARTED` — run final collector public sanitation and close the collector rebuild milestone.
+11. `NOT STARTED` — perform a clean-machine collector rebuild validation when practical.
+12. `NOT STARTED` — capture and reconstruct the complete GX10 implementation.
+13. `NOT STARTED` — validate the GX10 rebuild package and operator documentation.
+14. `NOT STARTED` — reconcile and update full two-server architecture, operations, and rebuild documentation.
+15. `NOT STARTED` — run final repository sanitation and two-server acceptance validation.
+16. `NOT STARTED` — publish the final rebuild milestone.
 
-```text
-8d55320 Import normalizer component history
-```
+Do not skip ahead unless this execution order is explicitly updated first. Only one item may be marked `NEXT`.
 
-The public-repository gate was repaired for the monorepo layout without weakening the private deny list:
+## Scope constraints
 
-```text
-18ec113 Fix public repo gate for monorepo layout
-```
+- Preserve verified working Vector and Grafana behavior; do not change behavior merely because a setting appears unusual.
+- Firewall/nftables reconstruction is intentionally out of scope. Public docs should state required connectivity prerequisites without publishing deployment-specific firewall policy.
+- Production device identities, addresses, credentials, authorized keys, certificate private keys, and similar private environment values stay outside the public repository.
+- Public rebuild artifacts may generalize identity-bearing historical service names while preserving their behavior.
+- Clean-machine rebuild installers must not be executed against working reference systems unless an explicit safe mode is designed and validated.
 
-Pre-replay normalizer feature checkpoint:
+## Continuity rule
 
-```text
-7f7f592 Add Cisco NX-OS OSPF retransmission parser
-81a3812 Enable NX-OS OSPF parser in default registry
-70 tests passing
-public repository gate passing
-5 local forbidden terms loaded
-clean working tree before publication
-```
-
-Implemented deterministic parser coverage now includes:
-
-- Arista EOS BGP adjacency changes
-- Cisco IOS XR BGP adjacency changes
-- Cisco NX-OS ETHPORT interface state changes
-- Cisco NX-OS OSPF neighbor retransmission degradation
-- Cisco NX-OS OSPFv3 neighbor retransmission degradation
-
-Generic event envelope extraction, platform-hint trust boundaries, capture-first behavior, and fail-open parser dispatch are also implemented.
-
-## NX-OS OSPF/OSPFv3 checkpoint
-
-The previously pinned parser task is complete and registered in the default parser registry.
-
-Supported event codes:
-
-```text
-OSPF-5-NBR_RETRANSMISSIONS
-OSPFV3-5-NBR_RETRANSMISSIONS
-```
-
-Deterministic enrichment contract:
-
-```text
-protocol      = ospf
-signal_type   = degradation
-entity_type   = ospf_neighbor
-state         = retransmissions
-entity_key    = OSPF|device|process|neighbor
-```
-
-The parser preserves `event_family = ospf` versus `event_family = ospfv3` and requires the process identity to agree with the event code (`ospf-N` for OSPF and `ospfv3-N` for OSPFv3).
-
-Malformed layouts, missing identity, unsupported event codes, and non-NX-OS platform hints stay on the generic capture-first path. Synthetic tests cover IPv4, IPv6, hostname/source fallback, future layouts, event-code/process mismatch, Cisco IOS XR rejection, and Arista EOS rejection.
-
-Measured replay against the live transitional GX10 classifier established a stronger difference: transitional GX10 v3 leaves the reviewed OSPFv3 retransmission events on the generic observation path with no OSPF entity key. The collector-side parser intentionally classifies them as `ospfv3` neighbor degradation and preserves the `ospfv3-N` process identity.
-
-## Platform-resolution and first replay checkpoint
-
-Stored-observation replay exposed an important platform trust boundary before production integration.
-
-Verified conclusions:
-
-- platform-specific parsers must not infer platform identity from event syntax alone
-- Vector fallback parser labels describe envelope parsing and are not authoritative vendor/platform identity
-- trusted `vendor_hint` and `os_family_hint` values come from a private operator-maintained platform inventory keyed by the deployment's stable syslog `source_ip` identity
-- message fingerprints may bootstrap and audit that private inventory, but are not runtime platform authority
-- sources absent from the private inventory remain `unknown` and stay on the generic capture-first path
-- production source identities and the private inventory remain outside this public repository
-
-The private inventory bootstrap was exercised against stored backlog observations without introducing a reviewed cross-platform evidence conflict.
-
-The resulting platform-resolution path was tested against six real stored Cisco NX-OS retransmission observations:
-
-```text
-3 OSPF retransmission observations
-3 OSPFv3 retransmission observations
-6 passed
-0 failed
-```
-
-All six resolved through trusted platform hints and entered the NX-OS parser with:
-
-```text
-vendor        = cisco
-os_family     = nxos
-protocol      = ospf
-signal_type   = degradation
-entity_type   = ospf_neighbor
-state         = retransmissions
-entity_key    = present
-```
-
-OSPF records preserved `event_family = ospf` and `ospf-N` process identity.
-
-OSPFv3 records preserved `event_family = ospfv3` and `ospfv3-N` process identity.
-
-This establishes the first real-observation proof of:
-
-```text
-trusted source identity
--> private platform inventory
--> vendor/os hints
--> deterministic vendor parser
--> normalized semantic event
-```
-
-No production collector path has been switched to the new normalizer.
-
-## Completed gate - broaden replay/parity
-
-Do not add parser breadth merely to increase coverage.
-
-This completed gate broadened stored-observation replay across the selected migration scope:
-
-1. Arista EOS BGP adjacency
-2. Cisco IOS XR BGP adjacency
-3. Cisco NX-OS ETHPORT state
-4. compare collector-side semantics with transitional GX10 behavior where it provides a meaningful reference
-5. record intentional differences rather than forcing incorrect parity
-6. verify unknown and unmapped observations remain visible, attention-eligible, and replayable
-7. verify repeated replay is deterministic
-8. design production integration and rollback only after the selected replay scope passes
-
-Do not modify the production path until the broader replay/parity gate is complete.
-
-## 2026-08-20 - Replay/parity milestone complete
-
-The selected collector-normalizer replay/parity gate is complete.
-
-Final live comparison:
-- EOS BGP: 6 strict matches
-- IOS XR BGP: 6 strict matches
-- NX-OS ETHPORT: 6 strict matches
-- NX-OS OSPF: 3 strict matches
-- NX-OS OSPFv3: 3 intentional differences
-- unexpected differences: 0
-- gate: PASS
-
-Replay identified two real collector gaps, both corrected in `99f623e`: EOS peer AS preservation and NX-OS ETHPORT `protocol = ethernet`.
-
-A sanitized fixture set now covers the selected parser scope plus an unmapped-source generic case. Repeated replay was deterministic and the full suite passes 73 tests.
-
-The production collector path remains unchanged. Next work is explicit production integration and rollback design.
+After each completed project sub-section passes its validation checkpoint, append the result to `docs/PROJECT_JOURNAL.md` and push the journal update to GitHub before materially proceeding into the next sub-section.
