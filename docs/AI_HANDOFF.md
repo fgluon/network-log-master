@@ -55,7 +55,7 @@ Never commit:
 
 Use RFC documentation address space and synthetic hostnames in examples.
 
-## Current verified normalizer checkpoint
+## Historical normalizer checkpoint before broadened replay
 
 The active normalizer source is `components/normalizer/` in this master repository.
 
@@ -98,11 +98,11 @@ Measured intentional difference: transitional GX10 v3 leaves the reviewed NX-OS 
 
 The production normalizer path has not yet been switched over.
 
-## Current resume point - broaden replay/parity
+## Completed gate - broaden replay/parity
 
 Do not immediately add another parser.
 
-Next replay scope:
+Completed replay scope:
 
 1. Arista EOS BGP adjacency
 2. Cisco IOS XR BGP adjacency
@@ -112,3 +112,25 @@ Next replay scope:
 6. prove unknown-source behavior remains capture-first
 7. prove deterministic repeated replay
 8. design production integration only after the selected replay scope passes
+
+## Current resume point - replay/parity complete
+
+The selected normalizer replay/parity milestone is complete.
+
+Verified checkpoint:
+- code checkpoint `99f623e` closes EOS peer-AS and NX-OS ETHPORT protocol gaps
+- 24 representative stored observations compared with transitional GX10 v3
+- 21 strict semantic matches
+- 3 intentional NX-OS OSPFv3 differences
+- 0 unexpected differences
+- sanitized deterministic replay passed twice
+- full normalizer suite: 73 passing tests
+- unknown/unmapped input remains capture-first and generic
+
+The IOS XR Down-event difference was representational only: GX10 captures a broader detail string, while the collector preserves the bounded reason.
+
+The OSPFv3 difference remains intentional: collector-side normalization recognizes deterministic OSPFv3 neighbor degradation where transitional GX10 v3 remains generic.
+
+No production path has been switched.
+
+Next engineering gate: design collector-side production integration, validation, and rollback. Do not retire transitional GX10 classification until cutover is proven stable.

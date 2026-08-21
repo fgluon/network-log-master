@@ -121,3 +121,17 @@ Do not wire the collector-side normalizer into the production ingest/handoff pat
 - rollback is straightforward
 
 After cutover proves stable, retire duplicate vendor parsing on GX10 deliberately.
+
+## Replay/parity gate completed
+
+The selected pre-cutover replay/parity milestone passed.
+
+Across 24 representative stored observations, collector output produced 21 strict semantic matches, 3 intentional OSPFv3 differences, and 0 unexpected differences against transitional GX10 v3.
+
+Two genuine collector gaps found by parity were corrected: EOS peer-AS preservation and NX-OS ETHPORT protocol identity.
+
+The IOS XR reason/detail difference was confirmed as representation-only and did not justify weakening the collector parser.
+
+Sanitized repeated replay is deterministic and the full normalizer suite passes 73 tests.
+
+This milestone does not authorize production cutover. Production integration, observability, validation, and rollback must be designed and reviewed next.

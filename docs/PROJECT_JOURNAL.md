@@ -109,3 +109,16 @@ Implementation was deliberately paused at this point for design discussion.
 - Verified that transitional GX10 v3 leaves the reviewed OSPFv3 retransmission observations generic, while the collector-side parser intentionally recognizes them as OSPFv3 neighbor degradation.
 - No production collector path was changed.
 - Next gate is broader replay/parity for EOS BGP, IOS XR BGP, and NX-OS ETHPORT before production integration design.
+
+## 2026-08-20 - Selected normalizer replay/parity milestone completed
+
+- Replayed the selected EOS BGP, IOS XR BGP, NX-OS ETHPORT, NX-OS OSPF, and NX-OS OSPFv3 migration scope.
+- Compared 24 representative stored observations against transitional GX10 v3.
+- Corrected two genuine collector gaps: EOS peer-AS preservation and NX-OS ETHPORT protocol identity.
+- Confirmed the IOS XR reason/detail discrepancy was representational rather than semantic.
+- Final parity result: 21 strict matches, 3 intentional OSPFv3 differences, 0 unexpected differences, PASS.
+- Added sanitized deterministic replay coverage including an unmapped-source generic case.
+- Repeated replay passed twice with identical output.
+- Full normalizer suite reached 73 passing tests.
+- No production collector or GX10 service path was changed.
+- Next gate is production integration and rollback design.

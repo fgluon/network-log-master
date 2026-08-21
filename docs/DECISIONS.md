@@ -119,3 +119,18 @@ Why:
 - unknown inventory entries must remain observable instead of being guessed
 
 Consequence: the collector injects trusted `vendor_hint` and `os_family_hint` before vendor-specific normalization. Unmapped sources remain on the generic capture-first path. Production device identities and the private inventory are never committed to this public repository.
+
+## ADR-009 - Migration parity is semantic, not textual
+
+**Status:** Accepted
+
+Collector-to-GX10 migration parity is judged on deterministic event semantics rather than byte-for-byte equality of transitional parser formatting.
+
+Why:
+
+- equivalent parsers may retain different harmless delimiters or presentation text
+- collector parsing should not be degraded merely to reproduce transitional formatting
+- real differences in protocol, identity, state, signal type, or structured meaning must still fail parity
+- intentional collector improvements must be explicitly documented rather than hidden
+
+Consequence: parity checks may normalize narrowly understood representation-only differences. Unexpected semantic differences remain migration failures.

@@ -51,7 +51,7 @@ The public-repository gate was repaired for the monorepo layout without weakenin
 18ec113 Fix public repo gate for monorepo layout
 ```
 
-Current verified normalizer feature checkpoint:
+Pre-replay normalizer feature checkpoint:
 
 ```text
 7f7f592 Add Cisco NX-OS OSPF retransmission parser
@@ -151,11 +151,11 @@ trusted source identity
 
 No production collector path has been switched to the new normalizer.
 
-## Immediate resume point - broaden replay/parity
+## Completed gate - broaden replay/parity
 
 Do not add parser breadth merely to increase coverage.
 
-The next engineering gate is to broaden stored-observation replay across the remaining selected migration scope:
+This completed gate broadened stored-observation replay across the selected migration scope:
 
 1. Arista EOS BGP adjacency
 2. Cisco IOS XR BGP adjacency
@@ -167,3 +167,22 @@ The next engineering gate is to broaden stored-observation replay across the rem
 8. design production integration and rollback only after the selected replay scope passes
 
 Do not modify the production path until the broader replay/parity gate is complete.
+
+## 2026-08-20 - Replay/parity milestone complete
+
+The selected collector-normalizer replay/parity gate is complete.
+
+Final live comparison:
+- EOS BGP: 6 strict matches
+- IOS XR BGP: 6 strict matches
+- NX-OS ETHPORT: 6 strict matches
+- NX-OS OSPF: 3 strict matches
+- NX-OS OSPFv3: 3 intentional differences
+- unexpected differences: 0
+- gate: PASS
+
+Replay identified two real collector gaps, both corrected in `99f623e`: EOS peer AS preservation and NX-OS ETHPORT `protocol = ethernet`.
+
+A sanitized fixture set now covers the selected parser scope plus an unmapped-source generic case. Repeated replay was deterministic and the full suite passes 73 tests.
+
+The production collector path remains unchanged. Next work is explicit production integration and rollback design.
