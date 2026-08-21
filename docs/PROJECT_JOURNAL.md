@@ -75,3 +75,20 @@ Implementation was deliberately paused at this point for design discussion.
 - Declared `components/normalizer/` in the master repository the active development source for future normalizer work.
 - The standalone normalizer repository is now historical/migration reference only.
 - No production collector or GX10 service behavior changed during this consolidation.
+
+## 2026-08-20 - NX-OS OSPF/OSPFv3 parser completed
+
+- Repaired the public-repository gate for the monorepo layout in `18ec113` without weakening the local forbidden-term policy.
+- Added the isolated Cisco NX-OS OSPF/OSPFv3 retransmission parser in `7f7f592`.
+- Registered the parser in the default parser registry in `81a3812`.
+- Parser coverage includes both `%OSPF-5-NBR_RETRANSMISSIONS` and `%OSPFV3-5-NBR_RETRANSMISSIONS`.
+- Preserved generic family identity (`ospf` versus `ospfv3`) while grouping both under protocol `ospf`.
+- Added deterministic `OSPF|device|process|neighbor` identity and required the process prefix to agree with the event code.
+- Added negative-path tests for malformed identity, future codes, OSPF/OSPFv3 process mismatches, Cisco IOS XR, and Arista EOS.
+- Verified source-IP fallback when hostname is absent.
+- Verified malformed and unsupported observations stay capture-first generic and attention-eligible.
+- Full suite reached 70 passing tests.
+- Public-repository gate passed with all five local forbidden terms loaded.
+- Published the parser and registry commits to the master repository.
+- No production collector or GX10 path was changed.
+- Next gate is replay/parity against stored observations and transitional GX10 enrichment, not additional parser breadth by default.
