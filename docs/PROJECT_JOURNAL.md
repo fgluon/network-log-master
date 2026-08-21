@@ -276,3 +276,35 @@ This makes GitHub the durable continuity mechanism for the project. A fresh engi
 ### Next action
 
 Update `docs/CURRENT_STATE.md` with the strict execution order and exactly one item marked `NEXT`, then continue collector Grafana clean-machine integration.
+
+## 2026-08-21 02:03 PDT - Documentation consistency audit
+
+### Goal
+
+Identify which durable project documents are now stale after the collector rebuild capture checkpoint and the new journal/recovery rules.
+
+### Findings
+
+Documents requiring immediate update before more implementation work:
+
+1. `docs/CURRENT_STATE.md` - still reports a 2026-08-20 checkpoint and identifies normalizer production integration as the next work. It does not record the published collector rebuild checkpoint, Grafana dashboard restore proof, strict execution order, or single `NEXT` action.
+2. `docs/AI_HANDOFF.md` - resume point still ends at normalizer replay/parity and does not direct a fresh session through the collector `REBUILD_STATUS.md` or the new journal-after-each-subsection rule.
+3. `docs/ROADMAP.md` - remains a broad architecture/build roadmap but does not reflect the current ordered rebuild-completion sequence: close collector rebuild first, then capture/rebuild GX10, then final two-server acceptance validation.
+4. `README.md` - repository description still says remaining live components will move here only after reconciliation, although the collector now has a substantial published rebuild capture. The repository map should explicitly surface collector rebuild status and recovery entry points.
+5. `components/collector/README.md` - remains only a short ownership description and does not point operators to package/runtime installers, verifiers, dashboard restore tooling, or `REBUILD_STATUS.md`.
+
+Documents that are substantially consistent and do not require immediate execution-control updates:
+
+- `docs/ARCHITECTURE.md` - target ownership and data-path boundaries remain consistent.
+- `docs/CLICKHOUSE.md` - current durable table/view and access-boundary description remains consistent with captured implementation.
+- `docs/OPERATIONS.md` - current ingest, backlog, transport, validation, retention, and failure behavior remain consistent at the architectural/operational level.
+- `docs/DATA_CONTRACTS.md` - current raw/normalized/AI-result/target incident contracts remain consistent.
+
+Documents that should receive targeted additions during final collector documentation hardening rather than blocking the immediate execution-control refresh:
+
+- `docs/GRAFANA.md` - should document the proven Grafana 13 `dashboard.grafana.app/v2` restore/verify mechanism and current datasource reconstruction contract.
+- `docs/DECISIONS.md` - should add durable decisions for the public two-clean-server rebuild acceptance contract and supported Grafana API restoration instead of direct SQLite modification.
+
+### Next action
+
+Update `docs/CURRENT_STATE.md` first because it is the execution authority. Then update `docs/AI_HANDOFF.md`, `docs/ROADMAP.md`, `README.md`, and `components/collector/README.md` before returning to Grafana implementation work. Each completed documentation sub-section must be journaled and pushed before proceeding to the next.
