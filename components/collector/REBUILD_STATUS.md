@@ -2,6 +2,12 @@
 
 Status: validated public capture checkpoint. Final clean-machine integration is still in progress.
 
+## Execution authority
+
+This file records detailed collector-specific rebuild evidence and remaining technical work. `docs/CURRENT_STATE.md` at the repository root is the authority for project execution order and the single `NEXT` item.
+
+After each completed validated collector sub-section, append and push a `docs/PROJECT_JOURNAL.md` entry before materially proceeding into the next sub-section.
+
 ## Rebuild objective
 
 Two clean servers, this public repository, and operator-supplied environment values must be sufficient to reconstruct the functional deployment without undocumented implementation knowledge.
@@ -282,20 +288,18 @@ The following Grafana work is NOT yet integrated into that installer:
 
 Several attempts to patch this integration were aborted before file replacement because patch anchors or heredoc delimiters were incorrect. Those failed attempts did not modify `install-runtime.sh`.
 
-## Remaining collector work
+## Detailed remaining collector work
 
-Resume in this order:
+Use `docs/CURRENT_STATE.md` for the authoritative ordering/status. The remaining collector work currently consists of:
 
-1. Wire secure Grafana administrator bootstrap into `install-runtime.sh`.
-2. Wire dashboard restoration and verification into `install-runtime.sh`.
-3. Add a package-install no-autostart guard so Grafana cannot transiently expose an unconfigured first-start state.
-4. Re-run installer structural validation.
-5. Re-run public-safety validation.
-6. Complete `components/collector/README.md`.
-7. Complete operator-facing clean-machine rebuild documentation.
-8. Run the final staged public-repository sanitation gate.
-9. Perform a clean-machine end-to-end rebuild validation when practical.
-10. Close the collector milestone.
+- secure Grafana administrator bootstrap wiring
+- dashboard restore/verification wiring
+- package-install no-autostart protection
+- installer structural and public-safety validation
+- complete collector README/operator rebuild documentation
+- final staged public-repository sanitation gate
+- clean-machine end-to-end collector rebuild validation when practical
+- collector milestone closure
 
 ## GX10 remaining milestone
 
