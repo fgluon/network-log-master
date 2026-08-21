@@ -13,9 +13,11 @@ This is a controlled migration, not a rewrite-in-place.
 3. this repository's current-state and component documentation
 4. older planning documents
 
-If the live checkout and published component repository differ, stop and reconcile them before consolidation.
+## Repository consolidation status
 
-## Current verified checkpoint
+The source-code consolidation step is complete.
+
+The live normalizer checkout and standalone public repository were reconciled at:
 
 ```text
 f95db38 Enable NX-OS ETHPORT parser in default registry
@@ -23,7 +25,19 @@ f95db38 Enable NX-OS ETHPORT parser in default registry
 clean working tree
 ```
 
-Implemented collector-side parser coverage at this checkpoint:
+That verified history was imported into this repository under `components/normalizer/` with a history-preserving Git subtree merge:
+
+```text
+8d55320 Import normalizer component history
+```
+
+The import commit records `f95db38` as the subtree split and parent. The normalizer test suite was then run from the new master-repository path in an isolated virtual environment with all 58 tests passing.
+
+New normalizer feature work now belongs in this master repository. The former standalone normalizer repository is historical/migration reference only.
+
+## Current parser checkpoint
+
+Implemented collector-side parser coverage:
 
 - Arista EOS BGP adjacency changes
 - Cisco IOS XR BGP adjacency changes
